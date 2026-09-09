@@ -209,9 +209,29 @@
     #donateLink { position:fixed; top:18px; right:18px; z-index:20; display:inline-flex; align-items:center; gap:8px; min-height:44px; padding:10px 16px; border:1px solid var(--accent-border); border-radius:12px; background:var(--panel-a); color:var(--accent); font-size:14px; font-weight:700; text-decoration:none; box-shadow:0 8px 22px #0008; }
     #donateLink:hover { background:var(--panel-b); border-color:var(--accent); }
     #donateLink:focus-visible { outline:2px solid var(--accent); outline-offset:3px; }
+    #modeScreen { position:fixed; inset:0; z-index:100; display:grid; place-items:center; padding:24px; background:radial-gradient(circle at 50% 35%,#39201a 0,#09090d 68%); }
+    .mode-card { width:min(760px,94vw); padding:34px; border:1px solid var(--accent-border); border-radius:24px; background:linear-gradient(145deg,var(--panel-a),var(--panel-b)); box-shadow:0 25px 90px #000b,inset 0 0 32px var(--accent-soft); text-align:center; }
+    .mode-card h1 { margin:8px 0 10px; color:var(--ink); font-size:clamp(28px,5vw,48px); }
+    .mode-card p { margin:0 0 24px; color:var(--muted); }
+    .mode-actions { display:grid; grid-template-columns:1fr 1fr; gap:16px; }
+    .mode-actions button { min-height:76px; margin:0; font-size:20px; }
+    .mode-actions button:disabled { cursor:not-allowed; opacity:.5; filter:grayscale(.7); }
+    body.mode-start > :not(#modeScreen) { visibility:hidden; }
+    @media (max-width:600px) { .mode-card { padding:24px 18px; } .mode-actions { grid-template-columns:1fr; } }
   </style>
 </head>
-<body>
+<body class="mode-start">
+  <section id="modeScreen" aria-labelledby="modeTitle">
+    <div class="mode-card">
+      <div class="eyebrow">Naruto Roulette</div>
+      <h1 id="modeTitle">Choose your game mode</h1>
+      <p id="modeHint">Create your character locally or wait for the online mode.</p>
+      <div class="mode-actions">
+        <button id="offlineMode" type="button">Offline</button>
+        <button id="onlineMode" type="button" disabled>Online — Coming Soon</button>
+      </div>
+    </div>
+  </section>
   <a id="donateLink" href="https://buymeacoffee.com/reik0o" target="_blank" rel="noopener noreferrer"><span aria-hidden="true">☕</span> Donate</a>
   <button id="themeSecret" type="button" aria-label="Narutomaki rain" title="Narutomaki rain">🍥</button>
   <div id="secretRain" aria-hidden="true"></div>
@@ -969,6 +989,7 @@ const sources={
     document.querySelector('#languageSelect').addEventListener('change',event=>{soundClick();language=event.target.value;settingsStore.set('narutoRouletteLanguage',language);applyLanguage();showStage(true);});
     document.querySelector('#themeSelect').addEventListener('change',event=>{soundClick();settingsStore.set('narutoRouletteTheme',event.target.value);applyTheme(event.target.value);});
     document.querySelector('#themeSecret').addEventListener('click',startSecretRain);
+    document.querySelector('#offlineMode').addEventListener('click',()=>{soundClick();document.body.classList.remove('mode-start');document.querySelector('#modeScreen').remove();});
     expandCatalog();
     applyTheme(settingsStore.get('narutoRouletteTheme','naruto'));
     applyLanguage();
