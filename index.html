@@ -1,0 +1,929 @@
+<!doctype html>
+<html lang="pl">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Spin The Wheel — Naruto</title>
+  <style>
+    :root { --ink:#f8f4ff; --muted:#bdb7d2; --panel:rgba(27,19,51,.78); --purple:#9b5cff; --pink:#ff4ca0; }
+    * { box-sizing:border-box; }
+    body { margin:0; min-height:100vh; color:var(--ink); font-family:Inter,ui-sans-serif,system-ui,-apple-system,Segoe UI,sans-serif; background: radial-gradient(circle at 50% -10%, #55217e 0, #1d123b 35%, #0c0917 75%); overflow-x:hidden; }
+    body:before { content:""; position:fixed; inset:0; pointer-events:none; opacity:.25; background-image:linear-gradient(115deg,transparent 0 47%,#fff 48%,transparent 49%),linear-gradient(20deg,transparent 0 47%,#fff 48%,transparent 49%); background-size:180px 180px; mix-blend-mode:overlay; }
+    .wrap { width:min(1100px,92vw); margin:auto; padding:32px 0 48px; }
+    header { display:flex; justify-content:space-between; align-items:center; gap:20px; margin-bottom:24px; }
+    .brand { display:flex; gap:12px; align-items:center; font-weight:900; letter-spacing:.03em; }
+    .brand-mark { width:42px; height:42px; display:grid; place-items:center; border-radius:14px; background:linear-gradient(135deg,var(--pink),var(--purple)); box-shadow:0 0 28px #9b5cff66; font-size:22px; }
+    .tag { color:#f7d8ff; background:#ffffff12; border:1px solid #ffffff1c; padding:9px 13px; border-radius:999px; font-size:12px; }
+    main { display:grid; grid-template-columns:1.2fr .8fr; gap:28px; align-items:center; }
+    .hero { padding:22px 0; }
+    h1 { margin:0 0 12px; font-size:clamp(42px,7vw,80px); line-height:.94; letter-spacing:-.06em; max-width:700px; }
+    h1 span { color:#d9a5ff; text-shadow:0 0 24px #b75dff88; }
+    .intro { max-width:590px; color:var(--muted); line-height:1.65; font-size:16px; }
+    .steps { display:flex; flex-wrap:wrap; gap:8px; margin-top:26px; }
+    .steps span { padding:8px 10px; border:1px solid #ffffff18; border-radius:999px; color:#756d8f; font-size:10px; font-weight:900; letter-spacing:.08em; transition:.2s; }
+    .steps span.active { color:#fff; background:#9b5cff33; border-color:#c68bff; box-shadow:0 0 18px #9b5cff35; }
+    .wheel-card { position:relative; display:grid; place-items:center; padding:20px; }
+    canvas { width:min(78vw,590px); height:min(78vw,590px); max-width:590px; max-height:590px; filter:drop-shadow(0 28px 35px #0008); cursor:pointer; }
+    .pointer { position:absolute; top:1px; z-index:2; width:0; height:0; border-left:17px solid transparent; border-right:17px solid transparent; border-top:38px solid #fff; filter:drop-shadow(0 4px 4px #0009); }
+    .wheel-card:after { content:""; position:absolute; width:30%; aspect-ratio:1; border-radius:50%; background:#fff0; box-shadow:0 0 65px 25px #a44cff18; pointer-events:none; }
+    .side { background:var(--panel); border:1px solid #ffffff18; border-radius:28px; padding:26px; backdrop-filter:blur(16px); box-shadow:0 20px 60px #0003; }
+    .eyebrow { color:#d5b6ff; text-transform:uppercase; letter-spacing:.16em; font-size:11px; font-weight:800; }
+    .result { min-height:100px; display:grid; align-content:center; padding:18px 0; border-bottom:1px solid #ffffff17; }
+    .result strong { font-size:34px; letter-spacing:-.04em; }
+    .result small { color:var(--muted); margin-top:5px; }
+    button { width:100%; border:0; border-radius:16px; padding:16px 20px; margin-top:20px; color:white; font-size:16px; font-weight:900; cursor:pointer; background:linear-gradient(110deg,var(--pink),var(--purple)); box-shadow:0 10px 25px #9b5cff40; transition:.2s transform,.2s filter; }
+    button:hover { transform:translateY(-2px); filter:brightness(1.12); }
+    button:disabled { opacity:.65; cursor:wait; transform:none; }
+    .name-controls { display:grid; gap:10px; margin-top:16px; }
+    .name-controls input { width:100%; border:1px solid var(--accent-border); border-radius:12px; padding:14px 13px; color:#fff4df; background:var(--panel-b); font:700 16px inherit; outline:none; }
+    .name-controls input:focus { border-color:var(--accent); box-shadow:0 0 0 3px var(--accent-soft); }
+    .name-actions { display:grid; grid-template-columns:1fr 1fr; gap:10px; }
+    .name-actions button { margin-top:0; padding:13px 12px; font-size:13px; }
+    #randomName { background:var(--panel-b); border:1px solid var(--accent-border); box-shadow:none; }
+    .hint { color:var(--muted); font-size:13px; line-height:1.55; margin:18px 0 0; }
+    .chips { display:flex; flex-wrap:wrap; gap:7px; margin-top:15px; }
+    .chip { color:#e8ddff; background:#ffffff0d; border:1px solid #ffffff13; border-radius:999px; padding:7px 9px; font-size:11px; }
+    footer { text-align:center; color:#817a98; font-size:12px; margin-top:25px; }
+    @media (max-width:800px) { main { grid-template-columns:1fr; } header { align-items:flex-start; } .side { margin-top:-5px; } }
+    /* TikTok-style portrait layout */
+    @media (min-width:801px) { body { background:#050507; } .wrap { width:430px; padding-top:18px; } header { margin-bottom:8px; } header .tag { display:none; } main { display:flex; flex-direction:column; gap:6px; } .hero { display:none; } .wheel-card { order:1; padding:6px 0 0; } canvas { width:410px; height:410px; } .side { order:2; width:100%; padding:15px 18px; border-radius:12px; background:#0e0e12; } .result { min-height:62px; padding:5px 0; } .result strong { font-size:29px; } .hint,.chips { display:none; } button { margin-top:10px; } }
+    .saved-results { padding:22px; border:1px solid #ffffff20; border-radius:16px; background:#151021; align-self:start; }
+    .saved-results h2 { margin:0 0 18px; font-size:20px; }
+    .saved-results table { width:100%; border-collapse:collapse; text-align:left; font-size:14px; }
+    .saved-results th,.saved-results td { padding:14px 8px; border-bottom:1px solid #ffffff15; overflow-wrap:anywhere; }
+    .saved-results thead { color:var(--muted); font-size:12px; }
+    .saved-results tbody th { font-weight:500; color:var(--muted); }
+    .saved-results td { font-weight:700; }
+    .leaderboard { padding:22px; border:1px solid #ffffff20; border-radius:16px; background:#151021; min-width:0; }
+    .leaderboard h2 { margin:0 0 14px; font-size:20px; }
+    .leader-list { display:grid; gap:8px; margin:0; padding:0; list-style:none; }
+    .leader-item { width:100%; margin:0; padding:12px; border:1px solid #ffffff18; border-radius:10px; background:#ffffff0b; color:var(--ink); text-align:left; box-shadow:none; display:grid; grid-template-columns:1fr auto; gap:5px 12px; align-items:center; }
+    .leader-item:hover { transform:translateY(-1px); }
+    .leader-name { font-weight:900; overflow-wrap:anywhere; }
+    .leader-clan { color:var(--muted); font-size:13px; }
+    .leader-power { font-size:18px; font-weight:1000; color:#ffc56a; }
+    .leader-modal { position:fixed; inset:0; z-index:40; display:grid; place-items:center; padding:24px; background:#0009; backdrop-filter:blur(8px); }
+    .leader-modal-card { width:min(720px,92vw); max-height:82vh; overflow:auto; border:1px solid var(--accent-border); border-radius:16px; background:linear-gradient(145deg,var(--panel-a),var(--panel-b)); box-shadow:0 28px 80px #000d,inset 0 0 28px var(--accent-soft); padding:18px; }
+    .leader-modal-head { display:grid; grid-template-columns:1fr auto; gap:16px; align-items:start; margin-bottom:12px; }
+    .leader-modal-head h3 { margin:0; font-size:22px; }
+    .leader-modal-head p { margin:5px 0 0; color:var(--muted); font-size:14px; }
+    .leader-modal-close { width:42px; height:42px; margin:0; padding:0; border-radius:50%; display:grid; place-items:center; font-size:22px; line-height:1; }
+    .leader-modal table { width:100%; border-collapse:collapse; font-size:14px; }
+    .leader-modal th,.leader-modal td { padding:10px 8px; border-bottom:1px solid var(--accent-border); text-align:left; vertical-align:top; overflow-wrap:anywhere; }
+    .leader-empty { color:var(--muted); font-size:13px; line-height:1.5; }
+    @media (min-width:801px) {
+      .wrap { width:min(900px,94vw); }
+      main { display:grid; grid-template-columns:430px minmax(0,1fr); grid-template-rows:416px auto; gap:18px 30px; align-items:start; }
+      .wheel-card { grid-column:1; grid-row:1; }
+      .side { grid-column:1; grid-row:2; }
+      .saved-results { grid-column:2; grid-row:1 / span 2; margin-top:22px; }
+    }
+    [hidden] { display:none !important; }
+    .hero { display:none; }
+    .saved-results { min-width:0; }
+    #reset { background:#262033; box-shadow:none; border:1px solid #ffffff25; }
+    #powerSummary { margin:20px 0; padding:20px; border:1px solid #b48aff; border-radius:14px; background:#9b5cff18; }
+    #powerScore { display:block; font-size:36px; margin:10px 0; }
+    #powerSummary p { color:var(--muted); line-height:1.6; }
+    #settingsButton { position:fixed; top:18px; left:18px; z-index:20; width:auto; margin:0; padding:11px 14px; border:1px solid var(--accent-border); border-radius:12px; background:var(--panel-a); box-shadow:0 8px 22px #0008; font-size:18px; }
+    #settingsPanel { position:fixed; top:66px; left:18px; z-index:19; width:250px; padding:18px; border:1px solid var(--accent-border); border-radius:16px; background:var(--panel-a); box-shadow:0 18px 45px #000b; }
+    #settingsPanel label { display:block; margin:13px 0 6px; color:var(--accent); font-size:11px; font-weight:800; letter-spacing:.1em; text-transform:uppercase; }
+    #settingsPanel select { width:100%; padding:10px; border:1px solid var(--accent-border); border-radius:9px; color:#fff4df; background:var(--panel-b); }
+    body.theme-sasuke { --muted:#b8c7ee; --panel:#101a2ee8; --purple:#496bff; --pink:#84e7ff; --accent:#7fc5ff; --accent-2:#496bff; --panel-a:#101a2ee8; --panel-b:#080d19e8; --accent-soft:#6faeff17; --accent-border:#7fc5ff4f; --accent-shadow:#58c9ff45; background:radial-gradient(circle at 72% 0,#345ea8 0,#111d35 34%,#05070d 76%); }
+    body.theme-sasuke:before { opacity:.32; background-image:linear-gradient(122deg,transparent 0 45%,#8edcff 46% 47%,transparent 48%),linear-gradient(68deg,transparent 0 49%,#617cff 50% 51%,transparent 52%),linear-gradient(28deg,transparent 0 42%,#b7e7ff 43% 44%,transparent 45%),radial-gradient(circle at 18% 22%,#b7e7ff 0 1px,transparent 2px),radial-gradient(circle at 72% 68%,#496bff 0 2px,transparent 3px); background-size:190px 210px,260px 190px,150px 240px,54px 54px,92px 92px; }
+    body.theme-sasuke:after { content:'雷  千鳥  写輪眼  雷  麒麟'; color:#7fc5ff2d; text-shadow:0 0 28px #5ea9ff55; }
+    body.theme-sakura { --muted:#f3bfd2; --panel:#2a111ee8; --purple:#d84c91; --pink:#ff9fc8; --accent:#ff9fc8; --accent-2:#d84c91; --panel-a:#2a111ee8; --panel-b:#140812e8; --accent-soft:#ff8fbd18; --accent-border:#ff9fc852; --accent-shadow:#ff6cae42; background:radial-gradient(circle at 30% 0,#a93d6d 0,#321121 39%,#0b0710 82%); }
+    body.theme-sakura:before { opacity:.36; background-image:radial-gradient(ellipse at 50% 50%,#ffc0d7 0 2px,transparent 3px),radial-gradient(ellipse at 50% 50%,#ff7fb0 0 1px,transparent 3px),radial-gradient(ellipse at 42% 42%,#ffe2ed 0 3px,transparent 4px),linear-gradient(145deg,transparent 0 46%,#ffc4d82b 47% 48%,transparent 49%),linear-gradient(35deg,transparent 0 49%,#ff82b51f 50% 51%,transparent 52%); background-size:58px 74px,93px 83px,126px 106px,240px 240px,180px 180px; }
+    body.theme-sakura:after { content:'桜  百豪  医療忍術  桜  怪力'; color:#ff9fc830; text-shadow:0 0 24px #ff6cae55; }
+    body.theme-smooth { --muted:#c9c9d2; --panel:#111116e8; --purple:#818cf8; --pink:#eeeeee; --accent:#d9d9e2; --accent-2:#818cf8; --panel-a:#17171de8; --panel-b:#0b0b0fe8; --accent-soft:#ffffff0e; --accent-border:#ffffff2b; --accent-shadow:#00000055; background:linear-gradient(180deg,#111116 0,#050507 100%); }
+    body.theme-smooth:before { opacity:.18; background-image:linear-gradient(90deg,#ffffff12 1px,transparent 1px),linear-gradient(#ffffff10 1px,transparent 1px); background-size:44px 44px; }
+    body.theme-smooth:after { display:none; }
+    /* Naruto-inspired visual treatment */
+    :root { --ink:#fff8ec; --muted:#d4c6b2; --panel:#17131dcc; --purple:#e04b28; --pink:#ff9e2c; --accent:#ffb957; --accent-2:#e94822; --panel-a:#211719e8; --panel-b:#100e13e8; --accent-soft:#ff8d2712; --accent-border:#ff9a3d44; --accent-shadow:#e8522548; }
+    body { background:radial-gradient(circle at 50% 5%,#653018 0,#25140f 31%,#090a0e 78%); }
+    body:before { opacity:.24; background-image:radial-gradient(circle at 20% 20%,#ffb03b 0 1px,transparent 2px),radial-gradient(circle at 70% 60%,#e85b32 0 1px,transparent 2px),radial-gradient(ellipse at 50% 50%,#ffd073 0 3px,transparent 4px),linear-gradient(135deg,transparent 0 42%,#ff9d3d18 43% 44%,transparent 45%),linear-gradient(45deg,transparent 0 47%,#ffda7a16 48% 49%,transparent 50%); background-size:46px 46px,73px 73px,120px 86px,260px 260px,170px 170px; }
+    body:after { content:'卍  火  風  水  雷  土  ラーメン  影分身'; position:fixed; inset:auto 0 3%; z-index:-1; color:#ff8d3028; font-size:clamp(25px,5vw,62px); letter-spacing:.35em; text-align:center; white-space:nowrap; transform:rotate(-4deg); pointer-events:none; }
+    .wrap { position:relative; }
+    .wrap:before { content:'火 影'; position:fixed; right:3vw; bottom:4vh; color:#ff6a2588; font-size:clamp(90px,16vw,210px); font-weight:1000; letter-spacing:-.2em; writing-mode:vertical-rl; pointer-events:none; transform:rotate(8deg); }
+    .wrap:after { content:'🍥'; position:fixed; left:4vw; bottom:8vh; color:#ffba55aa; font-size:clamp(46px,7vw,92px); filter:drop-shadow(0 0 18px #ff772955); pointer-events:none; transform:rotate(-13deg); }
+    body.theme-sasuke .wrap:before { content:'千 鳥'; color:#78c8ff70; text-shadow:0 0 32px #6faeff66; }
+    body.theme-sasuke .wrap:after { content:'⚡'; color:#9de9ffcc; text-shadow:0 0 26px #58c9ff; filter:none; }
+    body.theme-sakura .wrap:before { content:'桜 花'; color:#ff91bd73; text-shadow:0 0 30px #ff7bb955; }
+    body.theme-sakura .wrap:after { content:'✿'; color:#ffc0d7d9; text-shadow:0 0 22px #ff7ab6; filter:none; }
+    body.theme-smooth .wrap:before, body.theme-smooth .wrap:after { display:none; }
+    header { padding:12px 16px; border:1px solid #ff9a3d55; border-radius:18px; background:#181116cc; box-shadow:0 8px 30px #0008, inset 0 0 30px #ff63200d; }
+    .brand { letter-spacing:.12em; }
+    .brand-mark { display:none; }
+    .tag { color:#ffd18c; border-color:#ff9d3d55; background:#ff8b2712; }
+    .wheel-card { padding:14px; }
+    .wheel-card:before { display:none; }
+    .pointer { border-top-color:#ffb329; filter:drop-shadow(0 0 7px #ff6a28); }
+    canvas { filter:drop-shadow(0 0 16px #ff6a2855) drop-shadow(0 28px 35px #000b); }
+    .side,.saved-results,.leaderboard,#catalog { background:linear-gradient(145deg,var(--panel-a),var(--panel-b)); border-color:var(--accent-border); box-shadow:0 18px 55px #0009,inset 0 0 28px var(--accent-soft); }
+    .eyebrow { color:var(--accent); }
+    .result { border-color:var(--accent-border); }
+    .result strong { color:#fffdf6; text-shadow:0 0 18px var(--accent-shadow); }
+    button { background:linear-gradient(110deg,var(--accent-2),var(--accent)); box-shadow:0 10px 28px var(--accent-shadow); }
+    button:hover { filter:brightness(1.18) saturate(1.12); }
+    #reset,#randomName { background:var(--panel-b); border-color:var(--accent-border); box-shadow:none; }
+    .chip { color:#fff3d6; background:var(--accent-soft); border-color:var(--accent-border); }
+    .saved-results th,.saved-results td { border-color:var(--accent-border); }
+    .saved-results h2,.saved-results thead,.saved-results td { color:var(--accent); }
+    .saved-results tbody th { color:var(--muted); }
+    .leader-item { border-color:var(--accent-border); background:var(--accent-soft); }
+    .leader-power { color:var(--accent); }
+    #powerSummary { border-color:var(--accent); background:var(--accent-soft); }
+    @media (min-width:801px) {
+      .wrap { width:min(1240px,94vw); }
+      main { grid-template-columns:minmax(560px,1fr) minmax(330px,430px); grid-template-rows:auto auto; gap:22px 34px; }
+      .wheel-card { grid-column:1; grid-row:1 / span 2; min-height:690px; }
+      canvas { width:min(68vw,680px); height:min(68vw,680px); max-width:680px; max-height:680px; }
+      .side { grid-column:2; grid-row:1; }
+      .saved-results { grid-column:2; grid-row:2; margin-top:0; }
+      .leaderboard { grid-column:2; grid-row:3; }
+    }
+    @media (max-width:800px) { .wrap:before { font-size:80px; } .wheel-card:before { top:-3px; } }
+    .chips { display:flex; }
+    .hint { display:block; }
+    .chip { border-radius:8px; }
+    .chip.blocked { opacity:.65; border-style:dashed; }
+    #catalog { margin:22px 0; padding:18px; border:1px solid #ffffff25; border-radius:14px; }
+    #catalog summary { cursor:pointer; padding:9px 0; }
+    #catalog p { color:var(--muted); line-height:1.6; font-size:13px; }
+    #catalog a { color:#cfa9ff; }
+    #catalogRows { max-height:60vh; overflow:auto; }
+    @media (min-width:1000px) {
+      html,body { height:100%; overflow:hidden; }
+      body { min-height:100%; }
+      .wrap { width:min(1780px,98vw); height:100vh; padding:14px 0; display:grid; grid-template-rows:minmax(0,1fr) 44px; gap:12px; }
+      .wrap:before { right:1vw; bottom:11vh; opacity:.42; font-size:clamp(70px,10vw,150px); z-index:-1; }
+      .wrap:after { left:1.4vw; bottom:12vh; opacity:.55; font-size:clamp(34px,4vw,64px); z-index:-1; }
+      body:after { bottom:1vh; font-size:clamp(18px,3vw,42px); opacity:.75; }
+      main { height:auto; min-height:0; display:grid; grid-template-columns:minmax(280px,340px) minmax(420px,1fr) minmax(285px,350px) minmax(285px,350px); grid-template-rows:minmax(0,1fr); column-gap:34px; row-gap:18px; align-items:stretch; }
+      .wheel-card { grid-column:2; grid-row:1; min-height:0; padding:24px 22px 24px 6px; align-self:center; isolation:isolate; justify-self:center; }
+      canvas { width:min(66vh,35vw,610px); height:min(66vh,35vw,610px); max-width:610px; max-height:610px; }
+      .side { grid-column:1; grid-row:1; width:auto; min-height:0; max-height:100%; padding:18px; overflow:auto; }
+      .saved-results { grid-column:3; grid-row:1; margin-top:0; min-height:0; max-height:100%; padding:18px; overflow:auto; margin-left:10px; }
+      .leaderboard { grid-column:4; grid-row:1; min-height:0; max-height:100%; padding:18px; overflow:auto; }
+      .side,.saved-results,.leaderboard { position:relative; z-index:2; }
+      .saved-results h2,.leaderboard h2 { margin-bottom:10px; font-size:18px; }
+      .saved-results table { font-size:12px; }
+      .saved-results th,.saved-results td { padding:8px 5px; }
+      .result { min-height:74px; padding:8px 0; }
+      .result strong { font-size:clamp(22px,2vw,30px); }
+      button { padding:12px 14px; margin-top:10px; }
+      .hint { margin-top:10px; font-size:12px; }
+      .chips { max-height:28vh; overflow:auto; padding-right:3px; }
+      .chip { padding:5px 7px; font-size:10px; }
+      .leader-item { padding:9px; }
+      #powerSummary { position:fixed; left:18px; right:auto; bottom:70px; z-index:8; width:min(330px,28vw); margin:0; padding:14px; max-height:28vh; overflow:auto; }
+      #powerScore { font-size:28px; margin:6px 0; }
+      #powerSummary p { font-size:12px; line-height:1.45; }
+      #reset { justify-self:end; align-self:center; width:auto; min-width:190px; margin:0; position:relative; z-index:9; }
+      #catalog { justify-self:center; align-self:center; width:min(640px,44vw); margin:0; padding:8px 12px; max-height:40px; overflow:hidden; position:relative; z-index:7; }
+      #catalog[open] { position:fixed; left:50%; bottom:70px; transform:translateX(-50%); width:min(760px,58vw); max-height:46vh; overflow:auto; }
+      #catalog summary { padding:2px 0; font-size:12px; }
+      #catalog p { margin:7px 0; font-size:11px; line-height:1.35; }
+      #catalogRows { max-height:24vh; }
+      footer { display:none; }
+    }
+    @media (max-width:999px) {
+      body { overflow-x:hidden; }
+      main { grid-template-columns:1fr; }
+      .leaderboard { margin-top:14px; }
+    }
+    .wrap:after { display:none; }
+    #themeSecret { position:fixed; left:4vw; bottom:8vh; z-index:18; width:auto; min-width:44px; min-height:44px; margin:0; padding:0; display:grid; place-items:center; border:0; border-radius:12px; background:transparent; color:#ffba55aa; box-shadow:none; font-size:clamp(46px,7vw,92px); line-height:1; cursor:pointer; filter:drop-shadow(0 0 18px #ff772955); transform:rotate(-13deg); transition:transform .2s; }
+    body.theme-sasuke #themeSecret { color:#9de9ffcc; text-shadow:0 0 26px #58c9ff; filter:none; }
+    body.theme-sakura #themeSecret { color:#ffc0d7d9; text-shadow:0 0 22px #ff7ab6; filter:none; }
+    body.theme-smooth #themeSecret { display:none; }
+    @media (min-width:1000px) { #themeSecret { left:1.4vw; bottom:12vh; opacity:.55; font-size:clamp(34px,4vw,64px); } }
+    #themeSecret:hover { transform:rotate(-12deg) scale(1.12); }
+    #themeSecret:focus-visible { outline:2px solid var(--accent); outline-offset:3px; }
+    #secretRain { position:fixed; inset:0; z-index:17; overflow:hidden; pointer-events:none; }
+    #secretRain span { position:absolute; top:-120px; left:var(--x); width:var(--size); line-height:1; text-align:center; color:var(--accent); font-size:var(--size); opacity:.85; text-shadow:0 0 14px var(--accent-shadow); animation:secret-fall var(--duration) var(--delay) cubic-bezier(.333333,0,.666667,.333333) both,secret-drift var(--duration) var(--delay) linear both; }
+    /* Vertical distance follows t² (constant gravity); sideways motion stays uniform. */
+    @keyframes secret-fall { from { translate:0 0; } to { translate:0 calc(100dvh + 240px); } }
+    @keyframes secret-drift { from { transform:translateX(0) rotate(0deg); } to { transform:translateX(var(--drift)) rotate(var(--turn)); } }
+    @media (prefers-reduced-motion:reduce) { #themeSecret { transition:none; } #secretRain span { top:var(--y); animation:secret-glow 2s ease both; } @keyframes secret-glow { from,to { opacity:0; } 50% { opacity:.65; } } }
+    #donateLink { position:fixed; top:18px; right:18px; z-index:20; display:inline-flex; align-items:center; gap:8px; min-height:44px; padding:10px 16px; border:1px solid var(--accent-border); border-radius:12px; background:var(--panel-a); color:var(--accent); font-size:14px; font-weight:700; text-decoration:none; box-shadow:0 8px 22px #0008; }
+    #donateLink:hover { background:var(--panel-b); border-color:var(--accent); }
+    #donateLink:focus-visible { outline:2px solid var(--accent); outline-offset:3px; }
+  </style>
+</head>
+<body>
+  <a id="donateLink" href="https://buymeacoffee.com/reik0o" target="_blank" rel="noopener noreferrer"><span aria-hidden="true">☕</span> Donate</a>
+  <button id="themeSecret" type="button" aria-label="Narutomaki rain" title="Narutomaki rain">🍥</button>
+  <div id="secretRain" aria-hidden="true"></div>
+  <button id="settingsButton" type="button" aria-expanded="false" aria-controls="settingsPanel" title="Ustawienia">⚙</button>
+  <section id="settingsPanel" hidden>
+    <div class="eyebrow" id="settingsTitle">Ustawienia</div>
+    <label for="languageSelect" id="languageLabel">Język</label>
+    <select id="languageSelect"><option value="pl">Polski</option><option value="en">English</option><option value="ja">日本語</option></select>
+    <label for="themeSelect" id="themeLabel">Styl tła</label>
+    <select id="themeSelect"><option value="naruto">Naruto</option><option value="sasuke">Sasuke</option><option value="sakura">Sakura</option><option value="smooth">Smooth Black</option></select>
+  </section>
+  <div class="wrap">
+    <main>
+      <section class="hero"><div class="eyebrow">Naruto random generator</div><h1>Stwórz swoją<br><span>postacię.</span></h1><p class="intro">Losuj kolejne elementy swojej historii. Najpierw klan, potem jego unikalne buffy, a na końcu rangę i styl walki — dokładnie w formie wieloetapowego wyzwania.</p><div class="steps"><span class="active" id="step1">01 KLAN</span><span id="step2">02 BUFF</span><span id="step3">03 RANGA</span><span id="step4">04 WYNIK</span></div></section>
+      <section class="wheel-card"><div class="pointer"></div><canvas id="wheel" width="700" height="700" aria-label="Koło losujące"></canvas></section>
+      <aside class="side"><div class="eyebrow" id="stageLabel">Etap 01 · Imię</div><div class="result"><strong id="result">Gotowy?</strong><small id="sub">Najpierw nazwij swoją postać</small></div><div class="name-controls" id="nameControls"><input id="characterName" type="text" maxlength="28" autocomplete="off" placeholder="Imię postaci"><div class="name-actions"><button id="saveName" type="button">Zapisz imię</button><button id="randomName" type="button">Wylosuj imię</button></div></div><button id="spin">Losuj klan</button><button id="next" hidden>Przejdź dalej</button><p class="hint" id="hint">Każdy klan ma własne predyspozycje i buffy. Wyniki kolejnych etapów zależą od wcześniejszego losowania.</p><div class="chips" id="chips"></div></aside>
+      <aside class="saved-results" aria-labelledby="savedTitle"><h2 id="savedTitle">Twoje losowania</h2><table><thead><tr><th id="categoryHead" scope="col">Kategoria</th><th id="resultHead" scope="col">Wynik</th></tr></thead><tbody id="savedRows" aria-live="polite"></tbody></table></aside>
+      <aside class="leaderboard" aria-labelledby="leaderboardTitle"><h2 id="leaderboardTitle">Leaderboard postaci</h2><div id="leaderboardList" aria-live="polite"></div></aside>
+    </main>
+    <div class="leader-modal" id="leaderboardModal" hidden role="dialog" aria-modal="true" aria-labelledby="leaderModalTitle"><div class="leader-modal-card"><div class="leader-modal-head"><div><h3 id="leaderModalTitle">Szczegóły postaci</h3><p id="leaderModalSub"></p></div><button class="leader-modal-close" id="leaderModalClose" type="button" aria-label="Zamknij">×</button></div><div id="leaderModalBody"></div></div></div>
+    <section id="powerSummary" hidden aria-live="polite"><div class="eyebrow" id="powerTitle">Ogólna moc postaci</div><strong id="powerScore"></strong><p id="powerDetail"></p><p id="powerNote">Autorska punktacja gry: siedem statystyk daje po 10–70 pkt, a dodatkowe zdolności dodają bonusy. To umowna ocena, nie oficjalna skala Naruto.</p></section>
+    <button id="reset" type="button">Zacznij od nowa</button>
+    <details id="catalog"><summary id="catalogTitle">Katalog, źródła i zasady świata</summary><p id="catalogCount"></p><p id="catalogAbout">Rozszerzony katalog: Naruto, Boruto, Two Blue Vortex oraz wybrane oficjalne anime, filmy, powieści i gry. Nie jest to komplet wszystkich publikacji. Źródło przy opcji wskazuje jej uniwersum, nie potwierdza autorskich procentów RNG.</p><p id="catalogRules">Tryb alternatywnej historii: mentorzy z różnych epok mogą wystąpić razem. Dziedzictwo, trening i przeszczepy mają osobne warunki. Brak potwierdzonej drogi zdobycia oznacza 0% i wyjaśnienie. Lista zdolności dōjutsu losuje specjalizację, nie usuwa pozostałych funkcji oka. Natury oznaczają opanowane żywioły, nie wszystkie rodzaje energii.</p><div id="catalogRows"></div></details>
+    <footer>Naruto Roulette · Naruto / Boruto / Two Blue Vortex</footer>
+  </div>
+<script>
+    const palette=['#6b7bdf','#507dd4','#5373bb','#6357ba','#815ac2','#4e91c2','#6862cd','#486cb4'];
+    const optionPalette=['#e76f51','#f4a261','#e9c46a','#8ab17d','#2a9d8f','#4d8cc9','#6c63b5','#ad5c9d','#cf566c','#d98c45','#86a85f','#459c9a'];
+    function colorFor(label){let hash=0;for(let i=0;i<label.length;i++)hash=(hash*31+label.charCodeAt(i))>>>0;return optionPalette[hash%optionPalette.length];}
+    const option=(label,power=0)=>({label,power});
+    const i18n={
+      pl:{settings:'Ustawienia',language:'Język',theme:'Styl tła',spin:'Losuj',saved:'Twoje losowania',reset:'Zacznij od nowa',category:'Kategoria',result:'Wynik',roll:'Losowanie',results:'wyników',spinHint:'Zakręć kołem, aby zapisać wynik.',savedLine:'Zapisano.',unavailable:'Niedostępne',baseOdds:'Bazowe szanse — autorski balans gry.',rng:'RNG · wielkość pola odpowiada szansie.',summary:'Podsumowanie mocy',complete:'Twoja postać jest kompletna.',power:'Ogólna moc postaci',stats:'Statystyki',bonus:'bonusy',class:'Klasa',points:'pkt',powerNote:'Autorska punktacja gry: siedem statystyk daje po 10–70 pkt, a dodatkowe zdolności dodają bonusy. To umowna ocena, nie oficjalna skala Naruto.',name:'Imię postaci',nameStage:'Tworzenie postaci',namePrompt:'Wpisz imię postaci albo wylosuj je przed wyborem wioski.',namePlaceholder:'Imię postaci',saveName:'Zapisz imię',randomName:'Wylosuj imię',leaderboard:'Leaderboard postaci',leaderEmpty:'Ukończ postać, żeby zapisała się w leaderboardzie.',details:'Szczegóły postaci',clanSurname:'Nazwisko / klan',powerShort:'Siła'},
+      en:{settings:'Settings',language:'Language',theme:'Background style',spin:'Spin',saved:'Your rolls',reset:'Start over',category:'Category',result:'Result',roll:'Roll',results:'results',spinHint:'Spin the wheel to save the result.',savedLine:'Saved.',unavailable:'Unavailable',baseOdds:'Base odds — custom game balance.',rng:'RNG · slice size matches the chance.',summary:'Power summary',complete:'Your character is complete.',power:'Overall character power',stats:'Stats',bonus:'bonuses',class:'Class',points:'pts',powerNote:'Custom game scoring: seven stats give 10–70 pts each, and extra abilities add bonuses. This is a fan-made rating, not an official Naruto scale.',name:'Character name',nameStage:'Character creation',namePrompt:'Type a character name or roll one before choosing the village.',namePlaceholder:'Character name',saveName:'Save name',randomName:'Roll name',leaderboard:'Character leaderboard',leaderEmpty:'Finish a character to save it to the leaderboard.',details:'Character details',clanSurname:'Surname / clan',powerShort:'Power'},
+      ja:{settings:'設定',language:'言語',theme:'背景スタイル',spin:'回す',saved:'結果',reset:'最初から',category:'カテゴリ',result:'結果',roll:'抽選',results:'件',spinHint:'ホイールを回して結果を保存します。',savedLine:'保存済み。',unavailable:'使用不可',baseOdds:'基本確率 — ゲーム用の独自バランス。',rng:'RNG · 区画の大きさが確率を表します。',summary:'総合戦闘力',complete:'キャラクターが完成しました。',power:'キャラクター総合戦闘力',stats:'能力値',bonus:'ボーナス',class:'ランク',points:'点',powerNote:'ゲーム用の独自採点です。7つの能力値は各10〜70点で、追加能力がボーナスを加えます。公式のNARUTO戦闘力ではありません。',name:'キャラクター名',nameStage:'キャラクター作成',namePrompt:'里を選ぶ前に名前を入力するかランダムで決めます。',namePlaceholder:'キャラクター名',saveName:'名前を保存',randomName:'名前を抽選',leaderboard:'キャラクターランキング',leaderEmpty:'完成したキャラクターがランキングに保存されます。',details:'キャラクター詳細',clanSurname:'名字 / 一族',powerShort:'強さ'}
+    };
+    const settingsStore={
+      get(key,fallback){try{return localStorage.getItem(key)||fallback;}catch{return fallback;}},
+      set(key,value){try{localStorage.setItem(key,value);}catch{}},
+      json(key,fallback){try{return JSON.parse(localStorage.getItem(key))||fallback;}catch{return fallback;}},
+      setJson(key,value){try{localStorage.setItem(key,JSON.stringify(value));}catch{}}
+    };
+    let language=settingsStore.get('narutoRouletteLanguage','en');
+    const translations={en:{
+      'Wioska':'Village','Klan':'Clan','Another Clan':'Second clan','Special Trait':'Special trait','Ranga':'Rank','Mentor':'Mentor','Liczba natur chakry':'Number of chakra natures','Natura chakry':'Chakra nature','Kekkei Genkai':'Kekkei Genkai','Special Ability':'Special ability','Dōjutsu':'Dōjutsu','Dōjutsu Mastery':'Dōjutsu mastery','Ability':'Ability','Jinchūriki':'Jinchūriki','Bijū Mastery':'Bijū mastery','Czy używasz broni?':'Do you use a weapon?','Rodzaj broni':'Weapon type','Weapon Mastery':'Weapon mastery','Jutsu Mastery':'Jutsu mastery','Combat Skill / Taijutsu':'Combat skill / Taijutsu','Ilość chakry':'Chakra amount','IQ':'IQ','Speed':'Speed','Strength / Durability':'Strength / Durability','Genjutsu':'Genjutsu',
+      'Brak':'None','Brak drugiego klanu':'No second clan','Brak mentora':'No mentor','Nie jestem jinchūriki':'Not a jinchūriki','Nie':'No','Tak':'Yes','Bardzo niski':'Very low','Niski':'Low','Przeciętny':'Average','Dobry':'Good','Zaawansowany':'Advanced','Mistrzowski':'Masterful','Legendarny':'Legendary','Ogólna moc postaci':'Overall character power','Legendarny shinobi':'Legendary shinobi','Klasa Kage':'Kage class','Elitarny Jōnin':'Elite Jōnin','Jōnin':'Jōnin','Chūnin':'Chūnin','Genin':'Genin','Uczeń akademii':'Academy student','Tokubetsu Jōnin':'Special Jōnin','ANBU':'ANBU','Kage':'Kage',
+      'Ogień':'Fire','Wiatr':'Wind','Błyskawica':'Lightning','Ziemia':'Earth','Woda':'Water','Lód':'Ice','Drewno':'Wood','Lawa':'Lava','Burza':'Storm','Wrzenie':'Boil','Magnetyzm':'Magnet','Eksplozja':'Explosion','Żar':'Scorch','Kryształ':'Crystal','Mrok':'Dark','Stal':'Steel','Szybkość':'Swift','Pył (Kekkei Tōta)':'Dust (Kekkei Tōta)','Katon':'Fire Release','Fūton':'Wind Release','Raiton':'Lightning Release','Doton':'Earth Release','Suiton':'Water Release',
+      'Talent genjutsu':'Genjutsu talent','Talent Katon':'Fire Release talent','Precyzyjna kontrola chakry':'Precise chakra control','Witalność':'Vitality','Łańcuchy chakry':'Chakra chains','Talent pieczętowania':'Sealing talent','Jūken':'Gentle Fist','Obrona Kaiten':'Kaiten defense','Precyzja tenketsu':'Tenketsu precision','Silna siła życiowa':'Strong life force','Wszechstronność':'Versatility','Szybka regeneracja':'Fast regeneration','Manipulacja cieniem':'Shadow manipulation','Strategiczny geniusz':'Strategic genius','Owady pochłaniające chakrę':'Chakra-draining insects','Rój zwiadowczy':'Scout swarm','Wyostrzone zmysły':'Sharpened senses','Partner ninken':'Ninken partner','Powiększanie ciała':'Body expansion','Tryb motyla':'Butterfly mode','Transfer umysłu':'Mind transfer','Telepatia':'Telepathy','Kościana zbroja':'Bone armor',
+      'Kopiowanie technik':'Technique copying','Przewidywanie ruchów':'Movement prediction','Genjutsu wzrokowe':'Visual genjutsu','Sześć Ścieżek':'Six Paths','Genjutsu Ketsuryūgan':'Ketsuryūgan genjutsu','Manipulacja cieczami bogatymi w żelazo':'Iron-rich fluid manipulation','Wgląd w teraźniejszość':'Present sight','Wgląd w przeszłość od narodzin':'Past sight since birth',
+      'Regeneracja':'Regeneration','Talent Fūinjutsu':'Fūinjutsu talent','Osiem Bram':'Eight Gates','Absorpcja chakry':'Chakra absorption','Techniki czasoprzestrzenne':'Space-time techniques','Hydryfikacja':'Hydrification','Dziedzictwo Hyōton':'Ice Release heritage','Dziedzictwo Ketsuryūgan':'Ketsuryūgan heritage','Pasywne pochłanianie energii natury':'Passive nature energy absorption','Iluzje oddziałujące na ciało':'Body-affecting illusions','Przemiana w dym':'Smoke transformation','Techniki pszczół':'Bee techniques','Dziedzictwo zakazanych technik':'Forbidden-technique heritage','Kopiowanie chakry':'Chakra copying','Techniki marionetek':'Puppet techniques','Techniki kocie':'Cat techniques','Przystosowanie do walki w wodzie':'Water-combat adaptation','Zaawansowana transformacja':'Advanced transformation',
+      'Iryō Ninjutsu':'Medical ninjutsu','Sensoryka':'Sensory skill','Kugutsu':'Puppetry','marionetki':'puppets','Techniki papieru':'Paper techniques','Rytuał Jashina':'Jashin ritual','Juinjutsu':'Cursed seal','przeklęta pieczęć':'cursed seal','Komórki Hashiramy':'Hashirama cells','Modyfikacje naukowe':'Scientific modifications','Komórki Shibaia':'Shibai cells','Odbijanie ataków':'Attack reflection','narzędzie naukowe':'scientific ninja tool','błyskawica':'lightning','ogień':'fire','wiatr':'wind','ziemia':'earth','woda':'water',
+      'Łuk':'Bow','Wachlarz':'Fan','bliźniacze miecze':'twin swords','Bō':'staff','kij':'staff','Ostrza chakry':'Chakra blades','Marionetka bojowa':'Battle puppet','Potrójna kosa':'Triple-bladed scythe','Kote':'Kote','Smocze ostrze':'Dragon blade','Brak wioski / wędrowiec':'No village / wanderer'
+    },ja:{
+      'Wioska':'里','Klan':'一族','Another Clan':'第二の一族','Special Trait':'特殊特性','Ranga':'階級','Mentor':'師匠','Liczba natur chakry':'チャクラ性質の数','Natura chakry':'チャクラ性質','Kekkei Genkai':'血継限界','Special Ability':'特殊能力','Dōjutsu':'瞳術','Dōjutsu Mastery':'瞳術熟練度','Ability':'能力','Jinchūriki':'人柱力','Bijū Mastery':'尾獣熟練度','Czy używasz broni?':'武器を使う？','Rodzaj broni':'武器タイプ','Weapon Mastery':'武器熟練度','Jutsu Mastery':'術熟練度','Combat Skill / Taijutsu':'戦闘能力 / 体術','Ilość chakry':'チャクラ量','Speed':'速度','Strength / Durability':'力 / 耐久力','Genjutsu':'幻術',
+      'Brak':'なし','Brak drugiego klanu':'第二の一族なし','Brak mentora':'師匠なし','Nie jestem jinchūriki':'人柱力ではない','Nie':'いいえ','Tak':'はい','Bardzo niski':'非常に低い','Niski':'低い','Przeciętny':'普通','Dobry':'良い','Zaawansowany':'上級','Mistrzowski':'達人級','Legendarny':'伝説級','Ogólna moc postaci':'総合戦闘力','Legendarny shinobi':'伝説の忍','Klasa Kage':'影クラス','Elitarny Jōnin':'精鋭上忍','Uczeń akademii':'アカデミー生','Tokubetsu Jōnin':'特別上忍',
+      'Ogień':'火','Wiatr':'風','Błyskawica':'雷','Ziemia':'土','Woda':'水','Lód':'氷','Drewno':'木','Lawa':'熔遁','Burza':'嵐','Wrzenie':'沸遁','Magnetyzm':'磁遁','Eksplozja':'爆遁','Żar':'灼遁','Kryształ':'晶遁','Mrok':'冥遁','Stal':'鋼遁','Szybkość':'迅遁','Pył (Kekkei Tōta)':'塵遁（血継淘汰）','Katon':'火遁','Fūton':'風遁','Raiton':'雷遁','Doton':'土遁','Suiton':'水遁',
+      'Talent genjutsu':'幻術の才能','Talent Katon':'火遁の才能','Precyzyjna kontrola chakry':'精密なチャクラ制御','Witalność':'生命力','Łańcuchy chakry':'チャクラ鎖','Talent pieczętowania':'封印術の才能','Jūken':'柔拳','Obrona Kaiten':'回天防御','Precyzja tenketsu':'点穴精度','Silna siła życiowa':'強い生命力','Wszechstronność':'万能性','Szybka regeneracja':'高速再生','Manipulacja cieniem':'影操作','Strategiczny geniusz':'戦略の天才','Owady pochłaniające chakrę':'チャクラ吸収虫','Rój zwiadowczy':'偵察虫群','Wyostrzone zmysły':'鋭い感覚','Partner ninken':'忍犬の相棒','Powiększanie ciała':'倍化の術','Tryb motyla':'蝶モード','Transfer umysłu':'心転身','Telepatia':'精神感応','Kościana zbroja':'骨の鎧',
+      'Kopiowanie technik':'術のコピー','Przewidywanie ruchów':'動きの予測','Genjutsu wzrokowe':'視覚幻術','Sześć Ścieżek':'六道','Genjutsu Ketsuryūgan':'血龍眼幻術','Manipulacja cieczami bogatymi w żelazo':'鉄分を含む液体操作','Wgląd w teraźniejszość':'現在視','Wgląd w przeszłość od narodzin':'出生以降の過去視',
+      'Regeneracja':'再生','Talent Fūinjutsu':'封印術の才能','Osiem Bram':'八門','Absorpcja chakry':'チャクラ吸収','Techniki czasoprzestrzenne':'時空間忍術','Hydryfikacja':'水化','Dziedzictwo Hyōton':'氷遁の血統','Dziedzictwo Ketsuryūgan':'血龍眼の血統','Pasywne pochłanianie energii natury':'自然エネルギーの受動吸収','Iluzje oddziałujące na ciało':'肉体に作用する幻術','Przemiana w dym':'煙化','Techniki pszczół':'蜂の術','Dziedzictwo zakazanych technik':'禁術の血統','Kopiowanie chakry':'チャクラコピー','Techniki marionetek':'傀儡術','Techniki kocie':'猫の術','Przystosowanie do walki w wodzie':'水中戦適性','Zaawansowana transformacja':'高度な変化',
+      'Iryō Ninjutsu':'医療忍術','Sensoryka':'感知能力','Kugutsu':'傀儡','marionetki':'傀儡','Techniki papieru':'紙の術','Rytuał Jashina':'ジャシンの儀式','Juinjutsu':'呪印術','przeklęta pieczęć':'呪印','Komórki Hashiramy':'柱間細胞','Modyfikacje naukowe':'科学的改造','Komórki Shibaia':'シバイ細胞','Odbijanie ataków':'攻撃反射','narzędzie naukowe':'科学忍具','Łuk':'弓','Wachlarz':'扇','bliźniacze miecze':'双刀','Bō':'棒','kij':'棒','Ostrza chakry':'チャクラ刀','Marionetka bojowa':'戦闘傀儡','Potrójna kosa':'三枚刃の大鎌','Kote':'籠手','Smocze ostrze':'龍刃','Brak wioski / wędrowiec':'里なし / 放浪者'
+    }};
+    const translationExtras=[["Imię postaci","Character name","キャラクター名"],["Broń","Weapons","武器"],["Specjalizacja","Specialization","専門能力"],["Przejdź dalej","Next","次へ"],["Zamknij","Close","閉じる"],["Koło losujące","Roulette wheel","抽選ホイール"],["Biała Kāma","White Kāma","白い楔"],["Biały Wężowy Mędrzec","White Snake Sage","白蛇仙人"],["Genjutsu klanu Kurama","Kurama clan genjutsu","鞍馬一族の幻術"],["Transformacja mędrca","Sage transformation","仙人化"],["klan Jūgo","Jūgo’s clan","重吾の一族"],["Scalanie ciał","Body merging","肉体融合"],["Sakon i Ukon","Sakon and Ukon","左近と右近"],["Reinkarnacja życia","Life reincarnation","命の転生"],["naukowe narzędzie ninja","scientific ninja tool","科学忍具"],["Chakra Blade","Chakra blade","チャクラ刀"],["Dziesięcioogoniasty","Ten-Tails","十尾"],["Dōjutsu Ranmaru","Ranmaru’s dōjutsu","蘭丸の瞳術"],["Powieść / adaptacja anime","Novel / anime adaptation","小説 / アニメ化"],["Gra / osobna historia","Game / standalone story","ゲーム / 独立した物語"],["Powieść","Novel","小説"],["Film","Film","映画"],["Manga","Manga","漫画"],["Anime","Anime","アニメ"],["Manga Boruto","Boruto manga","BORUTOの漫画"],["Manga TBV","TBV manga","TBVの漫画"],["Anime Boruto","Boruto anime","BORUTOのアニメ"],["poziom wyszkolenia","training level","訓練水準"],["Więcej natur","More natures","より多くの性質"],["wszechstronność jutsu","jutsu versatility","術の多様性"],["predyspozycja","affinity","適性"],["techniki","techniques","術"],["percepcja i techniki","perception and techniques","知覚と術"],["Bijū","Bijū","尾獣"],["zasoby chakry i wytrzymałość","chakra reserves and durability","チャクラ量と耐久力"],["walka z bronią","weapon combat","武器戦闘"],["walka bronią","weapon combat","武器戦闘"],["Brak broni","No weapon","武器なし"],["trening bez broni","unarmed training","素手での訓練"],["Mastery","Mastery","熟練度"],["wykorzystanie zdolności","ability proficiency","能力の活用"],["szansa na bijū","chance of a bijū","尾獣の獲得確率"],["miejscowy mentor","local mentor","里の師匠"],["więcej natur","more natures","より多くの性質"],["rozwój jutsu","jutsu development","術の成長"],["Połączenie natur","Combined natures","性質の組み合わせ"],["Alternatywna historia: trening pod opieką tej postaci; epoki nie są filtrowane.","Alternate history: training with this character; eras are not filtered.","架空の歴史：この人物に師事します。時代による制限はありません。"],["Rzadkie dziedzictwo; samo opanowanie dwóch natur nie tworzy Kekkei Genkai.","Rare inherited ability; mastering two natures alone does not create a Kekkei Genkai.","希少な血統能力です。二つの性質を習得するだけでは血継限界は得られません。"],["Wymagany klan Kaguya.","Requires the Kaguya clan.","かぐや一族であることが必要です。"],["Trening medyczny: Tsunade, Sakura lub Shizune.","Medical training with Tsunade, Sakura or Shizune.","綱手、サクラ、シズネのいずれかによる医療忍術の指導が必要です。"],["Mentor znający Edo Tensei; technika wymaga ofiary i materiału genetycznego.","A mentor who knows Edo Tensei; the technique requires a sacrifice and genetic material.","穢土転生を知る師匠が必要です。この術には生贄と遺伝物質が必要です。"],["Mentor Ōnoki/Mū oraz Katon, Fūton i Doton.","Ōnoki or Mū as mentor, plus Fire, Wind and Earth Release.","師匠がオオノキまたは無で、火遁・風遁・土遁の習得が必要です。"],["Eksperyment pod opieką Orochimaru, Kabuto lub Amado.","An experiment supervised by Orochimaru, Kabuto or Amado.","大蛇丸、カブト、アマドのいずれかによる実験が必要です。"],["Udany eksperymentalny przeszczep.","A successful experimental transplant.","実験的な移植の成功が必要です。"],["Rzadkie przeżycie nałożenia Kāmy przez Momoshikiego; ryzyko przejęcia ciała.","Rare survival of receiving Momoshiki’s Kāma; risk of losing control of the body.","モモシキの楔を刻まれて生き残る稀な例です。体を乗っ取られる危険があります。"],["Rzadkie zgodne naczynie Isshikiego; ryzyko przejęcia ciała.","A rare compatible vessel for Isshiki; risk of losing control of the body.","イッシキに適合する稀な器です。体を乗っ取られる危険があります。"],["Wariant bez odtworzenia Ōtsutsuki; nie daje jego dōjutsu.","A variant without Ōtsutsuki resurrection; it does not grant their dōjutsu.","大筒木を復活させない型です。その瞳術は得られません。"],["Mentor prowadzący modyfikacje ciała.","A mentor who performs body modifications.","身体改造を行う師匠が必要です。"],["Amado i udany przeszczep komórek Shibaia; nie gwarantuje wszystkich shinjutsu.","Amado and a successful Shibai cell transplant; this does not guarantee every shinjutsu.","アマドによるシバイ細胞の移植成功が必要です。すべての神術が得られるとは限りません。"],["Amado; komórki Shibaia i przebudzenie w sytuacji granicznej.","Amado, Shibai cells and awakening in a life-threatening situation.","アマド、シバイ細胞、極限状態での覚醒が必要です。"],["Przeszczep komórek Shibaia; model zdobycia wzorowany na Koji.","Shibai cell transplant; acquisition modeled on Koji.","シバイ細胞の移植による獲得です。果心居士をモデルにしています。"],["Eksperyment Amado / komórki Shibaia.","Amado’s experiment / Shibai cells.","アマドの実験 / シバイ細胞が必要です。"],["Nieświadoma manifestacja w stylu Eidy; nie dowolna kontrola rzeczywistości.","An unconscious manifestation like Eida’s, not unrestricted control of reality.","エイダのような無意識の発現であり、現実を自由に操る能力ではありません。"],["Modyfikacje Amado z komórkami Shibaia.","Amado’s modifications using Shibai cells.","シバイ細胞を用いたアマドの改造が必要です。"],["Eksperyment Amado; działanie zachowuje ograniczenia kontaktu.","Amado’s experiment; contact restrictions still apply.","アマドの実験による能力です。接触に関する制約は適用されます。"],["Trening Boruto lub Kashin Koji.","Training with Boruto or Kashin Koji.","ボルトまたは果心居士による指導が必要です。"],["Mentor posiadający wiedzę o Hiraishin.","A mentor with knowledge of Hiraishin.","飛雷神の術を知る師匠が必要です。"],["Dostęp do treningu senjutsu przez mentora.","Access to senjutsu training through a mentor.","師匠を通じた仙術の訓練が必要です。"],["Chakra Ōtsutsuki i Byakugan Hyūga; model wymaga obu linii.","Ōtsutsuki chakra and a Hyūga Byakugan; this model requires both bloodlines.","大筒木のチャクラと日向の白眼が必要です。このゲームでは両方の血統が条件です。"],["Przebudzenie przez połączenie chakry Ōtsutsuki z Byakuganem Hyūga.","Awakening by combining Ōtsutsuki chakra with a Hyūga Byakugan.","大筒木のチャクラと日向の白眼を組み合わせて覚醒します。"],["Wyjątkowy przeszczep lub moc Ōtsutsuki; zwykły trening Sharingana nie wystarcza.","An exceptional transplant or Ōtsutsuki power; ordinary Sharingan training is not enough.","特殊な移植または大筒木の力が必要です。通常の写輪眼の訓練だけでは得られません。"],["Dziedzictwo odpowiedniego klanu; poza nim wyłącznie bardzo rzadki przeszczep.","Inherited from the corresponding clan; otherwise only through a very rare transplant.","対応する一族から受け継ぎます。それ以外は極めて稀な移植のみです。"],["Klan Uchiha; przeszczep oczu bliskiego krewnego z Mangekyō.","Uchiha clan; transplant of a close relative’s Mangekyō eyes.","うちは一族で、近親者の万華鏡写輪眼の移植が必要です。"],["Przeszczep od bliskiego krewnego.","A transplant from a close relative.","近親者からの移植です。"],["Dziedzictwo Chinoike lub wyjątkowy przeszczep.","Chinoike heritage or an exceptional transplant.","血之池一族の血統、または特殊な移植によって獲得します。"],["Kāma Isshikiego; sama przynależność do Ōtsutsuki nie wystarcza.","Isshiki’s Kāma; belonging to the Ōtsutsuki clan alone is not enough.","イッシキの楔が必要です。大筒木一族であるだけでは得られません。"],["Wcześniej zdobyte komórki Shibaia / ich manifestacja.","Previously acquired Shibai cells / their manifestation.","シバイ細胞、またはその能力を先に獲得している必要があります。"],["Katalog: brak potwierdzonej ogólnej drogi zdobycia; RNG zablokowane zamiast wymyślonego dziedziczenia.","Catalog only: no confirmed general acquisition route; excluded from RNG rather than inventing inheritance rules.","カタログのみ：一般的な獲得方法が確認されていないため、架空の遺伝条件を設けず抽選対象外にしています。"],["Katalog: wymaga szczególnej drogi związanej z Drzewem Boga; obecna kolejność kół nie potwierdza tych warunków.","Catalog only: requires a specific path involving the God Tree; the current wheel sequence cannot establish these conditions.","カタログのみ：神樹に関わる特別な条件が必要です。現在の抽選順序では条件を確認できません。"],["Wyjątkowe dziedzictwo w alternatywnej historii.","Exceptional heritage in an alternate history.","架空の歴史における希少な血統能力です。"],["Moc Ōtsutsuki lub Rinnegan oraz wyjątkowe zapieczętowanie Jūbiego.","Ōtsutsuki power or Rinnegan, plus an exceptional sealing of the Ten-Tails.","大筒木の力または輪廻眼と、十尾の特殊な封印が必要です。"]];
+    for(const [key,en,ja] of translationExtras){translations.en[key]=en;translations.ja[key]=ja;}
+    translations.pl={'Another Clan':'Drugi klan','Special Trait':'Cecha klanowa','Special Ability':'Specjalna zdolność','Dōjutsu Mastery':'Opanowanie dōjutsu','Bijū Mastery':'Opanowanie mocy bijū','Weapon Mastery':'Opanowanie broni','Jutsu Mastery':'Opanowanie jutsu','Combat Skill / Taijutsu':'Umiejętności walki / Taijutsu','Speed':'Szybkość','Strength / Durability':'Siła / Wytrzymałość','Ability':'Zdolność','Mastery':'Opanowanie','Sage Mode':'Tryb mędrca','Prescience':'Przewidywanie przyszłości','Omnipotence':'Wszechmoc','Claw Marks':'Ślady pazurów','Eternal Mangekyō Sharingan':'Wieczny Mangekyō Sharingan','Chakra Blade':'Ostrze chakry'};
+    Object.assign(translations.ja,{'Genin':'下忍','Chūnin':'中忍','Jōnin':'上忍','Kage':'影','ANBU':'暗部','IQ':'知能指数','Sage Mode':'仙人モード','Prescience':'未来視','Omnipotence':'全能','Claw Marks':'爪痕','Eternal Mangekyō Sharingan':'永遠の万華鏡写輪眼','Mangekyō Sharingan':'万華鏡写輪眼','Sharingan':'写輪眼','Byakugan':'白眼','Rinnegan':'輪廻眼','Tenseigan':'転生眼','Ketsuryūgan':'血龍眼','Senrigan':'千里眼','Kokugan':'黒眼','Jōgan':'淨眼','Rinne Sharingan':'輪廻写輪眼','Shikotsumyaku':'屍骨脈','Kāma':'楔','Hyōton':'氷遁','Mokuton':'木遁','Yōton':'熔遁','Ranton':'嵐遁','Futton':'沸遁','Jiton':'磁遁','Bakuton':'爆遁','Shakuton':'灼遁','Shōton':'晶遁','Meiton':'冥遁','Kōton':'鋼遁','Jinton · Szybkość':'迅遁','Jinton · Pył (Kekkei Tōta)':'塵遁（血継淘汰）','Hiraishin':'飛雷神の術','Byakugō':'百豪','Jiongu':'地怨虞','Edo Tensei':'穢土転生','Rasengan Uzuhiko':'螺旋丸 渦彦','Amaterasu':'天照','Tsukuyomi':'月読','Kamui':'神威','Kotoamatsukami':'別天神','Amenotejikara':'天手力','Limbo':'輪墓','Kagutsuchi':'加具土命','Ōhirume':'大日孁','Yachihoko':'八千矛','Sukunahikona':'少名毘古那','Daikokuten':'大黒天','Kunai':'クナイ','Shuriken':'手裏剣','Katana':'刀','Kusarigama':'鎖鎌','Senbon':'千本','Tantō':'短刀','Nunchaku':'ヌンチャク','Fūma Shuriken':'風魔手裏剣'});
+    translations.en['Jūgo — nienazwany klan']='Jūgo — unnamed clan';
+    translations.ja['Jūgo — nienazwany klan']='重吾の一族（名称不明）';
+    if(!Object.hasOwn(i18n,language))language='en';
+    // Match complete labels; never replace fragments inside names or translated words.
+    function t(value){
+      if(value==null)return '';
+      const text=String(value),dict=translations[language]||{};
+      if(Object.hasOwn(dict,text))return dict[text];
+      if(text.includes(' → '))return text.split(' → ').map(t).join(' → ');
+      if(text.includes(' · '))return text.split(' · ').map(t).join(' · ');
+      let match;
+      if((match=text.match(/^Natura chakry (\d+) \/ (\d+)$/)))return t('Natura chakry')+' '+match[1]+' / '+match[2];
+      if((match=text.match(/^(\d+) ogon(?:y|ów)?$/)))return language==='ja'?match[1]+'尾':language==='en'?match[1]+(match[1]==='1'?' tail':' tails'):text;
+      if((match=text.match(/^Klan (.+)\.$/)))return language==='ja'?match[1]+'一族が必要です。':language==='en'?'Requires the '+match[1]+' clan.':text;
+      if((match=text.match(/^Wymagane natury: (.+)\. Zgodność natur nie gwarantuje dziedzictwa\.$/)))return language==='ja'?'必要な性質：'+match[1].split(' + ').map(t).join(' + ')+'。性質が一致しても血統能力は保証されません。':language==='en'?'Required natures: '+match[1].split(' + ').map(t).join(' + ')+'. Matching natures do not guarantee inheritance.':text;
+      if((match=text.match(/^lepszy (.+)$/)))return (language==='en'?'improved ':language==='ja'?'向上：':'lepszy ')+t(match[1]);
+      if((match=text.match(/^Poziom (.+)$/)))return (language==='en'?'Level: ':language==='ja'?'水準：':'Poziom ')+t(match[1]);
+      return text;
+    }
+    const localeExtras=[["catalog","Katalog, źródła i zasady świata","Catalog, sources and world rules","カタログ・出典・世界のルール"],["options","Opcje","Options","選択肢"],["catalogCount","Pozycje w kołach (z powtarzającymi się kategoriami)","Wheel entries (including repeated categories)","ホイールの項目数（重複するカテゴリを含む）"],["smooth","Gładka czerń","Smooth Black","スムースブラック"],["title","Naruto — generator postaci","Naruto — character generator","NARUTO — キャラクター作成"],["catalogAbout","Rozszerzony katalog: Naruto, Boruto, Two Blue Vortex oraz wybrane oficjalne anime, filmy, powieści i gry. Nie jest to komplet wszystkich publikacji. Źródło wskazuje pochodzenie opcji, nie potwierdza autorskich procentów RNG.","Expanded catalog: Naruto, Boruto, Two Blue Vortex and selected official anime, films, novels and games. It does not cover every publication. Sources identify the origin of entries, not the validity of the game’s custom RNG percentages.","NARUTO、BORUTO、Two Blue Vortexと、一部の公式アニメ・映画・小説・ゲームを収録しています。全刊行物を網羅するものではありません。出典は登場作品を示すもので、ゲーム独自の抽選確率を裏付けるものではありません。"],["catalogRules","Tryb alternatywnej historii: mentorzy z różnych epok mogą wystąpić razem. Dziedzictwo, trening i przeszczepy mają osobne warunki. Brak potwierdzonej drogi zdobycia oznacza 0% i wyjaśnienie. Losowanie zdolności dōjutsu wybiera specjalizację, nie usuwa pozostałych funkcji oka. Natury oznaczają opanowane żywioły, nie wszystkie rodzaje energii.","Alternate-history mode: mentors from different eras can appear together. Inheritance, training and transplants have separate requirements. Unconfirmed acquisition routes have a 0% chance and an explanation. Dōjutsu rolls select a specialization without removing the eye’s other abilities. Natures represent mastered elements, not every type of energy.","架空の歴史モードでは、異なる時代の師匠が同時に登場します。血統・訓練・移植にはそれぞれ条件があります。獲得方法が未確認の項目は確率を0%とし、理由を表示します。瞳術の能力抽選は専門能力を選ぶもので、他の機能を失うわけではありません。性質は習得した五大性質を指し、あらゆるエネルギーの種類を含むものではありません。"]];
+    for(const [key,pl,en,ja] of localeExtras){i18n.pl[key]=pl;i18n.en[key]=en;i18n.ja[key]=ja;}
+    i18n.pl.leaderboard='Ranking postaci';i18n.pl.leaderEmpty='Ukończ postać, aby zapisać ją w rankingu.';
+    const themeSecrets={naruto:{icon:'🍥',labels:{pl:'Deszcz narutomaki',en:'Narutomaki rain',ja:'なると巻きの雨'}},sasuke:{icon:'⚡',labels:{pl:'Deszcz piorunów',en:'Lightning rain',ja:'雷の雨'}},sakura:{icon:'✿',labels:{pl:'Deszcz kwiatów sakury',en:'Cherry blossom rain',ja:'桜の花の雨'}},smooth:{icon:'✦',labels:{pl:'Deszcz gwiazd',en:'Star rain',ja:'星の雨'}}};
+    let secretTheme='naruto',secretTimer=null;
+    function refreshThemeSecret(){
+      const secret=themeSecrets[secretTheme],button=document.querySelector('#themeSecret');
+      button.hidden=secretTheme==='smooth';
+      button.textContent=secret.icon;button.title=secret.labels[language];button.setAttribute?.('aria-label',secret.labels[language]);
+    }
+    function clearSecretRain(){
+      if(secretTimer!==null){clearTimeout(secretTimer);secretTimer=null;}
+      document.querySelector('#secretRain').replaceChildren();
+    }
+    function startSecretRain(){
+      clearSecretRain();
+      if(secretTheme==='smooth')return;
+      const layer=document.querySelector('#secretRain'),secret=themeSecrets[secretTheme];
+      const reduced=typeof matchMedia==='function'&&matchMedia('(prefers-reduced-motion: reduce)').matches;
+      for(let i=0;i<(reduced?10:40);i++){
+        const particle=document.createElement('span');particle.textContent=secret.icon;
+        for(const [key,value] of Object.entries({'--x':(10+Math.random()*70)+'%','--y':Math.random()*90+'%','--size':(16+Math.random()*68)+'px','--duration':(2.4+Math.random())+'s','--delay':Math.random()*1.4+'s','--drift':(Math.random()*4-2)+'vw','--turn':(Math.random()*180-90)+'deg'}))particle.style.setProperty(key,value);
+        layer.append(particle);
+      }
+      secretTimer=setTimeout(()=>{layer.replaceChildren();secretTimer=null;},5000);
+    }
+    function applyLanguage(){
+      refreshThemeSecret();
+      const copy=i18n[language],count=Object.keys(answers).length;
+      if(document.documentElement)document.documentElement.lang=language;
+      document.title=copy.title;
+      const settingsButton=document.querySelector('#settingsButton');
+      settingsButton.title=copy.settings;settingsButton.setAttribute?.('aria-label',copy.settings);
+      document.querySelector('#leaderModalClose').setAttribute?.('aria-label',t('Zamknij'));
+      document.querySelector('#wheel').setAttribute?.('aria-label',t('Koło losujące'));
+      document.querySelector('#characterName').setAttribute?.('aria-label',copy.name);
+      document.querySelector('#catalogTitle').textContent=copy.catalog;
+      document.querySelector('#catalogAbout').textContent=copy.catalogAbout;
+      document.querySelector('#catalogRules').textContent=copy.catalogRules;
+      document.querySelector('#themeSelect option[value="smooth"]').textContent=copy.smooth;
+      document.querySelector('#languageSelect').value=language;
+      document.querySelector('#settingsTitle').textContent=copy.settings;
+      document.querySelector('#languageLabel').textContent=copy.language;
+      document.querySelector('#themeLabel').textContent=copy.theme;
+      document.querySelector('#categoryHead').textContent=copy.category;
+      document.querySelector('#resultHead').textContent=copy.result;
+      document.querySelector('#savedTitle').textContent=copy.saved+' · '+count;
+      document.querySelector('#reset').textContent=copy.reset;
+      document.querySelector('#powerNote').textContent=copy.powerNote;
+      document.querySelector('#characterName').placeholder=copy.namePlaceholder;
+      document.querySelector('#saveName').textContent=copy.saveName;
+      document.querySelector('#randomName').textContent=copy.randomName;
+      document.querySelector('#leaderboardTitle').textContent=copy.leaderboard;
+      document.querySelector('#spin').textContent=copy.spin+': '+t(active()?.label||'');
+      renderLeaderboard();
+      renderCatalog();
+      if(!leaderboardModal.hidden&&selectedLeaderId){const item=leaderboard().find(x=>x.id===selectedLeaderId);if(item)openLeaderboardModal(item);}
+    }
+    function applyTheme(theme){
+      const selected=['naruto','sasuke','sakura','smooth'].includes(theme)?theme:'naruto';
+      document.querySelector('#themeSelect').value=selected;
+      secretTheme=selected;clearSecretRain();refreshThemeSecret();
+      if(!document.body)return;
+      document.body.classList.remove('theme-sasuke','theme-sakura','theme-smooth');
+      if(selected!=='naruto')document.body.classList.add('theme-'+selected);
+    }
+    const list=(labels,points=0)=>labels.map(label=>option(label,points));
+    // Autorski balans gry; punkty nie są oficjalną skalą mocy Naruto.
+    const traits={
+      Uchiha:list(['Talent genjutsu','Talent Katon','Precyzyjna kontrola chakry'],12),
+      Uzumaki:list(['Witalność','Łańcuchy chakry','Talent pieczętowania'],12),
+      Hyūga:list(['Jūken','Obrona Kaiten','Precyzja tenketsu'],12),
+      Senju:list(['Silna siła życiowa','Wszechstronność','Szybka regeneracja'],12),
+      Nara:list(['Manipulacja cieniem','Strategiczny geniusz'],10),
+      Aburame:list(['Owady pochłaniające chakrę','Rój zwiadowczy'],10),
+      Inuzuka:list(['Wyostrzone zmysły','Partner ninken'],10),
+      Akimichi:list(['Powiększanie ciała','Tryb motyla'],10),
+      Yamanaka:list(['Transfer umysłu','Telepatia'],10),
+      Kaguya:list(['Shikotsumyaku','Kościana zbroja'],14)
+    };
+    const clans=['Uchiha','Uzumaki','Hyūga','Senju','Nara','Aburame','Inuzuka','Akimichi','Yamanaka','Kaguya','Hatake','Sarutobi'];
+    const eyeAbilities={
+      Sharingan:list(['Kopiowanie technik','Przewidywanie ruchów','Genjutsu wzrokowe'],12),
+      'Mangekyō Sharingan':list(['Amaterasu','Tsukuyomi','Kamui','Kotoamatsukami'],22),
+      Rinnegan:list(['Sześć Ścieżek','Amenotejikara','Limbo'],28)
+    };
+    const levels=['Bardzo niski','Niski','Przeciętny','Dobry','Zaawansowany','Mistrzowski','Legendarny'];
+    const statOptions=levels.map((name,i)=>option(name+' · '+(i+1)+'/7',(i+1)*10));
+    const masteryOptions=levels.map((name,i)=>option(name+' · '+(i+1)+'/7',i*3));
+    const chakraNatures=list(['Katon · Ogień','Fūton · Wiatr','Raiton · Błyskawica','Doton · Ziemia','Suiton · Woda'],4);
+    const stage=(id,label,options)=>({id,label,options});
+    const stats=[
+      ['jutsu','Jutsu Mastery'],['combat','Combat Skill / Taijutsu'],['chakra','Ilość chakry'],
+      ['iq','IQ'],['speed','Speed'],['strength','Strength / Durability'],['genjutsu','Genjutsu']
+    ];
+    const baseStages=[
+      stage('village','Wioska',list(['Konohagakure','Sunagakure','Kirigakure','Kumogakure','Iwagakure','Amegakure','Otogakure','Takigakure'])),
+      stage('clan','Klan',list(clans)),
+      stage('another','Another Clan',[option('Brak drugiego klanu'),...list(clans,10)]),
+      stage('rank','Ranga',['Uczeń akademii','Genin','Chūnin','Jōnin','ANBU','Kage'].map((x,i)=>option(x,i*4))),
+      stage('mentor','Mentor',[option('Brak mentora'),...list(['Kakashi','Jiraiya','Tsunade','Orochimaru','Might Guy','Asuma','Minato','Killer B'],10)]),
+      stage('natureCount','Liczba natur chakry',[1,2,3,4,5].map(count=>({...option(String(count)),count}))),
+      stage('kekkei','Kekkei Genkai',[option('Brak'),...list(['Hyōton · Lód','Mokuton · Drewno','Yōton · Lawa','Ranton · Burza','Futton · Wrzenie','Jiton · Magnetyzm','Bakuton · Eksplozja','Shakuton · Żar','Shikotsumyaku'],18)]),
+      stage('special','Special Ability',[option('Brak'),...list(['Sage Mode','Regeneracja','Talent Fūinjutsu','Hiraishin','Osiem Bram','Absorpcja chakry'],20)]),
+      stage('eye','Dōjutsu',[option('Brak'),option('Byakugan',12),option('Sharingan',12),option('Mangekyō Sharingan',22),option('Rinnegan',28),option('Tenseigan',28)]),
+      stage('bijuu','Jinchūriki',[option('Nie jestem jinchūriki'),...['Shukaku · 1 ogon','Matatabi · 2 ogony','Isobu · 3 ogony','Son Gokū · 4 ogony','Kokuō · 5 ogonów','Saiken · 6 ogonów','Chōmei · 7 ogonów','Gyūki · 8 ogonów','Kurama · 9 ogonów'].map((x,i)=>option(x,16+i*2))]),
+      stage('weaponUse','Czy używasz broni?',list(['Nie','Tak'])),
+      ...stats.map(([id,label])=>stage(id,label,statOptions))
+    ];
+    let answers={}, current=0, angle=0, busy=false, settled=false, finished=false, savedToLeaderboard=false, selectedLeaderId=null, animationId=0;
+    const randomNames=['Arata','Ren','Kaito','Hikaru','Sora','Daichi','Riku','Yuna','Aiko','Mika','Hana','Akira','Nori','Takeshi','Mina','Rei','Kiyoshi','Emi','Haruto','Natsuki'];
+    const canvas=document.querySelector('#wheel'),ctx=canvas.getContext('2d');
+    const spin=document.querySelector('#spin'),next=document.querySelector('#next'),reset=document.querySelector('#reset');
+    const result=document.querySelector('#result'),sub=document.querySelector('#sub'),chips=document.querySelector('#chips');
+    const nameControls=document.querySelector('#nameControls'),characterName=document.querySelector('#characterName'),saveName=document.querySelector('#saveName'),randomName=document.querySelector('#randomName');
+    const leaderboardList=document.querySelector('#leaderboardList'),leaderboardModal=document.querySelector('#leaderboardModal'),leaderModalTitle=document.querySelector('#leaderModalTitle'),leaderModalSub=document.querySelector('#leaderModalSub'),leaderModalBody=document.querySelector('#leaderModalBody'),leaderModalClose=document.querySelector('#leaderModalClose');
+    const villageAvailability={
+      Konohagakure:{clans:['Uchiha','Uzumaki','Hyūga','Senju','Nara','Aburame','Inuzuka','Akimichi','Yamanaka','Hatake','Sarutobi','Shimura','Kurama','Iburi','Sarutobi'],mentors:['Kakashi','Jiraiya','Tsunade','Might Guy','Asuma','Minato','Iruka','Ebisu','Kurenai','Yamato','Anko','Shizune','Naruto','Sasuke','Sakura','Konohamaru','Hanabi','Shino','Rock Lee','Shikamaru','Ino','Sai','Tenten','Tobirama','Hashirama','Hiruzen','Itachi','Shisui','Kashin Koji','Amado','Boruto']},
+      Sunagakure:{clans:['Fūma','Yuki','Shirogane','Uzumaki'],mentors:['Gaara','Temari','Kankurō','Chiyo','Baki','Rasa']},
+      Kirigakure:{clans:['Hōzuki','Hoshigaki','Karatachi','Yuki','Funato'],mentors:['Zabuza','Mei','Chōjūrō','Kisame','Suigetsu','Mangetsu']},
+      Kumogakure:{clans:['Yotsuki','Ōtsutsuki'],mentors:['Killer B','Darui','A','Third Raikage','Omoi','Samui']},
+      Iwagakure:{clans:['Kamizuru','Kaguya'],mentors:['Ōnoki','Kurotsuchi','Mū','Akatsuchi','Kitsuchi','Deidara']},
+      Amegakure:{clans:['Fūma','Uzumaki'],mentors:['Nagato','Konan','Yahiko','Pain','Hanzō']},
+      Otogakure:{clans:['Fūma','Jūgo'],mentors:['Orochimaru','Kabuto','Kimimaro','Jūgo','Sasuke']},
+      Takigakure:{clans:['Uzumaki','Fūma'],mentors:['Fū','Kakuzu','Shibuki']}
+    };
+    function villageFilter(s){
+      const village=answers.village?.label, data=villageAvailability[village];
+      if(!data||s.id==='village')return s.options;
+      if(s.id==='clan'||s.id==='another')return s.options.filter(o=>o.label==='Brak drugiego klanu'||data.clans.includes(o.label));
+      if(s.id==='mentor')return s.options.filter(o=>o.label==='Brak mentora'||data.mentors.includes(o.label));
+      return s.options;
+    }
+    function sequence(){
+      const out=[];
+      for(const original of baseStages){
+        let filtered=villageFilter(original);
+        if(original.id==='another')filtered=filtered.filter(x=>x.label!==(answers.clan?.label));
+        const s={...original,options:filtered};
+        out.push(s);
+        if(s.id==='clan'||s.id==='another'){
+          const clan=answers[s.id]?.label;
+          if(traits[clan]) out.push(stage(s.id+'Trait','Special Trait · '+clan,traits[clan]));
+        }
+        if(s.id==='natureCount'){
+          const count=answers.natureCount?.count||0;
+          for(let i=0;i<count;i++){
+            const previous=Array.from({length:i},(_,j)=>answers['nature'+j]?.label);
+            out.push(stage('nature'+i,'Natura chakry '+(i+1)+' / '+count,chakraNatures.filter(o=>!previous.includes(o.label))));
+          }
+        }
+        if(s.id==='eye'&&answers.eye&&answers.eye.label!=='Brak'){
+          out.push(stage('eyeMastery','Dōjutsu Mastery · '+answers.eye.label,masteryOptions));
+          if(eyeAbilities[answers.eye.label]) out.push(stage('eyeAbility','Ability · '+answers.eye.label,eyeAbilities[answers.eye.label]));
+        }
+        if(s.id==='bijuu'&&answers.bijuu&&answers.bijuu.label!=='Nie jestem jinchūriki') out.push(stage('bijuuMastery','Bijū Mastery · '+answers.bijuu.label,masteryOptions));
+        if(s.id==='weaponUse'&&answers.weaponUse?.label==='Tak'){
+          out.push(stage('weapon','Rodzaj broni',weaponOptions));
+          out.push(stage('weaponMastery','Weapon Mastery',masteryOptions));
+        }
+      }
+      return out;
+    }
+    // Wagi i powiązania są autorskim balansem gry, nie kanonicznymi prawdopodobieństwami.
+    const baseWeights={
+      clan:[8,7,9,4,12,12,12,12,12,3,10,10], another:null,
+      rank:[10,35,30,16,7,2],mentor:[32,15,7,7,5,12,12,3,7],
+      natureCount:[50,30,13,5,2],kekkei:[65,5,2,5,4,4,4,4,4,3],
+      special:[65,8,8,8,2,6,3],eye:[78,9,8,3,1,.5],
+      bijuu:[82,3,2,2,2,2,2,2,2,1],weaponUse:[45,55],weapon:[35,25,18,7,5,5,2,3]
+    };
+    const affinities={
+      Uchiha:{eye:{Sharingan:15,'Mangekyō Sharingan':8},nature:'Katon',stats:['genjutsu','jutsu']},
+      Uzumaki:{special:{'Talent Fūinjutsu':6,Regeneracja:3},stats:['chakra','strength'],bijuu:3},
+      'Hyūga':{eye:{Byakugan:35,Tenseigan:3},stats:['combat','eyeMastery']},
+      Senju:{kekkei:{'Mokuton · Drewno':12},stats:['chakra','strength']},
+      Nara:{stats:['iq','jutsu']},Aburame:{stats:['jutsu','chakra']},Inuzuka:{stats:['combat','speed']},
+      Akimichi:{stats:['strength','chakra']},Yamanaka:{stats:['iq','genjutsu']},
+      Kaguya:{kekkei:{Shikotsumyaku:25},stats:['combat','strength']},
+      Hatake:{nature:'Raiton',stats:['jutsu','iq']},Sarutobi:{nature:'Katon',stats:['jutsu','combat']},
+      Kakashi:{nature:'Raiton',stats:['jutsu','iq','eyeMastery'],weapon:{Kunai:2}},
+      Jiraiya:{special:{'Sage Mode':8},stats:['jutsu','chakra']},
+      Tsunade:{special:{Regeneracja:8},stats:['strength','jutsu']},
+      Orochimaru:{special:{Regeneracja:5},weapon:{Kusanagi:15},stats:['jutsu','iq']},
+      'Might Guy':{special:{'Osiem Bram':15},stats:['combat','speed','strength']},
+      Asuma:{nature:'Fūton',weapon:{Kunai:5},stats:['combat']},
+      Minato:{special:{Hiraishin:20},stats:['speed','iq']},
+      'Killer B':{weapon:{Katana:8},stats:['bijuuMastery','combat']},
+      Konohagakure:{nature:'Katon'},Sunagakure:{nature:'Fūton',weapon:{Wachlarz:8}},
+      Kirigakure:{nature:'Suiton',weapon:{Samehada:12,Katana:3}},Kumogakure:{nature:'Raiton'},
+      Iwagakure:{nature:'Doton'},Amegakure:{nature:'Suiton'},Otogakure:{stats:['jutsu']},Takigakure:{nature:'Suiton'}
+    };
+    const traitStats={
+      'Talent genjutsu':['genjutsu'],'Talent Katon':['jutsu'],'Precyzyjna kontrola chakry':['jutsu','eyeMastery'],
+      Witalność:['chakra','strength'],'Łańcuchy chakry':['chakra','bijuuMastery'],'Talent pieczętowania':['jutsu','bijuuMastery'],
+      'Jūken':['combat'],'Obrona Kaiten':['combat','strength'],'Precyzja tenketsu':['combat','eyeMastery'],
+      'Silna siła życiowa':['chakra','strength'],Wszechstronność:['jutsu'],'Szybka regeneracja':['strength'],
+      'Manipulacja cieniem':['jutsu'],'Strategiczny geniusz':['iq'],'Owady pochłaniające chakrę':['chakra'],
+      'Rój zwiadowczy':['iq'],'Wyostrzone zmysły':['speed'],'Partner ninken':['combat'],
+      'Powiększanie ciała':['strength'],'Tryb motyla':['strength','speed'],'Transfer umysłu':['genjutsu'],
+      Telepatia:['iq'],Shikotsumyaku:['combat','strength'],'Kościana zbroja':['strength'],
+      'Sage Mode':['jutsu','strength'],'Regeneracja':['strength'],'Talent Fūinjutsu':['jutsu','bijuuMastery'],
+      Hiraishin:['speed'],'Osiem Bram':['combat','speed','strength'],'Absorpcja chakry':['chakra'],
+      'Kopiowanie technik':['jutsu'],'Przewidywanie ruchów':['combat','speed'],'Genjutsu wzrokowe':['genjutsu'],
+      Amaterasu:['jutsu'],Tsukuyomi:['genjutsu'],Kamui:['speed'],Kotoamatsukami:['genjutsu'],
+      'Sześć Ścieżek':['jutsu'],Amenotejikara:['speed'],Limbo:['combat']
+    };
+const sources={
+      naruto:{title:'Naruto — manga',media:'Manga',url:'https://naruto-official.com/en/comics'},
+      boruto:{title:'Boruto: Naruto Next Generations',media:'Manga Boruto',url:'https://naruto-official.com/en/comics'},
+      tbv:{title:'Boruto: Two Blue Vortex',media:'Manga TBV',url:'https://naruto-official.com/en/special/tbv'},
+      anime:{title:'Naruto / Shippūden — anime',media:'Anime',url:'https://naruto-official.com/en/anime'},
+      banime:{title:'Boruto — anime',media:'Anime Boruto',url:'https://naruto-official.com/en/anime'},
+      novel:{title:'Sasuke Shinden: Book of Sunrise',media:'Powieść / adaptacja anime',url:'https://naruto.fandom.com/wiki/Sasuke_Shinden:_Book_of_Sunrise'},
+      movie:{title:'Naruto Shippūden the Movie: The Will of Fire',media:'Film',url:'https://naruto.fandom.com/wiki/Naruto_Shipp%C5%ABden_the_Movie:_The_Will_of_Fire'},
+      last:{title:'The Last: Naruto the Movie',media:'Film',url:'https://naruto.fandom.com/wiki/The_Last:_Naruto_the_Movie'},
+      blood:{title:'Naruto the Movie: Blood Prison',media:'Film',url:'https://naruto.fandom.com/wiki/Naruto_the_Movie:_Blood_Prison'},
+      game:{title:'Ultimate Ninja STORM CONNECTIONS',media:'Gra / osobna historia',url:'https://naruto.fandom.com/wiki/Hikari_Uchiha'},
+      chronicles:{title:'Naruto: Uzumaki Chronicles 2',media:'Gra / osobna historia',url:'https://naruto.fandom.com/wiki/Shirogane_Clan'},
+      jinraiden:{title:'Naruto Jinraiden: The Day the Wolf Howled',media:'Powieść',url:'https://naruto.fandom.com/wiki/Kodon_Clan'},
+      snow:{title:'Ninja Clash in the Land of Snow',media:'Film',url:'https://naruto.fandom.com/wiki/Yukigakure'},
+      dragon:{title:'Naruto Shippūden: Dragon Blade Chronicles',media:'Gra / osobna historia',url:'https://naruto.fandom.com/wiki/Naruto_Shipp%C5%ABden:_Dragon_Blade_Chronicles'},
+      prescience:{title:'Boruto Database: Prescience',media:'Manga TBV',url:'https://naruto-official.com/en/news/01_2243'},
+      omni:{title:'Boruto Database: Omnipotence',media:'Manga Boruto',url:'https://naruto-official.com/en/news/01_1691'},
+      karma:{title:'Boruto Database: Karmas and Vessels',media:'Manga Boruto',url:'https://naruto-official.com/en/news/01_1770'}
+    };
+    const entry=(label,power,baseWeight,source='naruto',extra={})=>({...option(label,power),baseWeight,source,...extra});
+    const hasClan=name=>[answers.clan?.label,answers.another?.label].includes(name);
+    const experimental=()=>['Orochimaru','Kabuto','Amado'].includes(answers.mentor?.label);
+    const hasSpecial=name=>answers.special?.label===name;
+    const natureSet=()=>new Set(Object.entries(answers).filter(([id])=>/^nature\d+$/.test(id)).map(([,o])=>o.label.split(' · ')[0]));
+    const stageById=id=>baseStages.find(s=>s.id===id);
+    let weaponOptions;
+    function expandCatalog(){
+      // Freeze legacy weights by identity before adding entries. No index-based rarity for new data.
+      for(const s of baseStages)s.options.forEach((o,i)=>{o.baseWeight=baseWeights[s.id]?.[i]??10;o.source='naruto';});
+      for(const s of Object.values(traits))s.forEach((o,i)=>{o.baseWeight=[50,30,20][i]??10;o.source='naruto';});
+      for(const s of Object.values(eyeAbilities))s.forEach((o,i)=>{o.baseWeight=[50,30,15,5][i]??5;o.source='naruto';});
+      const newClans=[
+        ['Ōtsutsuki',.08,'boruto'],['Hōzuki',6],['Yuki',3],['Chinoike',1,'novel'],['Jūgo — nienazwany klan',1],
+        ['Kurama',2,'anime'],['Iburi',1,'anime'],['Kamizuru',2,'anime'],['Fūma',5],['Tsuchigumo',2,'anime'],
+        ['Hagoromo',2],['Shimura',4],['Tenrō',1,'anime'],['Rinha',1,'anime'],['Shirogane',.5,'chronicles'],
+        ['Izuno',3,'banime'],['Funato',2,'banime'],['Hoshigaki',3,'banime'],['Karatachi',3,'banime'],
+        ['Kodon',1,'jinraiden'],['Kedōin',1,'anime'],['Kohaku',1,'anime'],['Yotsuki',4]
+      ];
+      for(const [name,w,src='naruto'] of newClans){
+        stageById('clan').options.push(entry(name,0,w,src));
+        if(name!=='Brak znanego klanu')stageById('another').options.push(entry(name,10,w,src));
+      }
+      const extraTraits={
+        'Ōtsutsuki':[['Absorpcja chakry',22],['Techniki czasoprzestrzenne',25]],
+        'Hōzuki':[['Hydryfikacja',14]],Yuki:[['Dziedzictwo Hyōton',14]],Chinoike:[['Dziedzictwo Ketsuryūgan',14]],
+        'Jūgo — nienazwany klan':[['Pasywne pochłanianie energii natury',18]],
+        Kurama:[['Iluzje oddziałujące na ciało',14]],Iburi:[['Przemiana w dym',14]],
+        Kamizuru:[['Techniki pszczół',10]],Tsuchigumo:[['Dziedzictwo zakazanych technik',12]],
+        Rinha:[['Kopiowanie chakry',12]],Shirogane:[['Techniki marionetek',12]],
+        Izuno:[['Techniki kocie',10]],Funato:[['Przystosowanie do walki w wodzie',10]],Kedōin:[['Zaawansowana transformacja',10]]
+      };
+      for(const [name,rows] of Object.entries(extraTraits)){
+        const src=stageById('clan').options.find(o=>o.label===name).source;
+        traits[name]=rows.map(([label,p])=>entry(label,p,10,src));
+      }
+      for(const [name,src='naruto'] of [
+        ['Kusagakure'],['Yugakure'],['Shimogakure'],['Uzushiogakure'],['Hoshigakure','anime'],
+        ['Yukigakure','snow'],['Getsugakure','anime'],['Takumigakure','anime'],['Ishigakure'],['Tanigakure','anime'],
+        ['Brak wioski / wędrowiec']
+      ])stageById('village').options.push(entry(name,0,name.startsWith('Brak')?8:2,src));
+      stageById('rank').options.splice(3,0,entry('Tokubetsu Jōnin',10,8));
+      for(const [name,w=3,src='naruto'] of [
+        ['Iruka',12],['Ebisu',8],['Kurenai',7],['Yamato',6],['Anko',5],['Shizune',6],
+        ['Naruto',3,'boruto'],['Sasuke',3,'boruto'],['Sakura',5,'boruto'],['Konohamaru',8,'boruto'],
+        ['Hanabi',5,'banime'],['Shino',7,'banime'],['Rock Lee',5,'boruto'],['Shikamaru',5,'boruto'],
+        ['Ino',5,'boruto'],['Sai',5,'boruto'],['Tenten',6,'boruto'],['Gaara',4],['Temari',6],['Kankurō',6],
+        ['Chiyo',3],['Sasori',1],['Zabuza',2],['Mei',3],['Chōjūrō',4,'boruto'],['Darui',4,'boruto'],
+        ['Ōnoki',2],['Mū',.5],['Kurotsuchi',4,'boruto'],['Tobirama',.5],['Hashirama',.3],['Hiruzen',3],
+        ['Itachi',1],['Shisui',1],['Kabuto',2],['Fukasaku',1],['Biały Wężowy Mędrzec',.5],
+        ['Kashin Koji',1,'tbv'],['Amado',1,'boruto'],['Boruto',1,'tbv']
+      ])stageById('mentor').options.push(entry(name,10,w,src,{route:'Alternatywna historia: trening pod opieką tej postaci; epoki nie są filtrowane.'}));
+      const combos={'Hyōton · Lód':['Suiton','Fūton'],'Mokuton · Drewno':['Suiton','Doton'],'Yōton · Lawa':['Katon','Doton'],'Ranton · Burza':['Raiton','Suiton'],'Futton · Wrzenie':['Katon','Suiton'],'Jiton · Magnetyzm':['Fūton','Doton'],'Bakuton · Eksplozja':['Doton','Raiton'],'Shakuton · Żar':['Katon','Fūton']};
+      for(const o of stageById('kekkei').options){
+        if(combos[o.label]){o.requires=()=>combos[o.label].every(n=>natureSet().has(n));o.condition='Wymagane natury: '+combos[o.label].join(' + ')+'. Zgodność natur nie gwarantuje dziedzictwa.';o.route='Rzadkie dziedzictwo; samo opanowanie dwóch natur nie tworzy Kekkei Genkai.';}
+        if(o.label==='Shikotsumyaku'){o.requires=()=>hasClan('Kaguya');o.condition='Wymagany klan Kaguya.';}
+      }
+      for(const [name,p,w,src,extra] of [
+        ['Shōton · Kryształ',18,1,'anime',{}],['Meiton · Mrok',18,.5,'movie',{}],
+        ['Kōton · Stal',18,.5,'movie',{}],['Jinton · Szybkość',18,.5,'movie',{}],
+        ['Przemiana w dym · Iburi',14,4,'anime',{requires:()=>hasClan('Iburi'),condition:'Klan Iburi.'}],
+        ['Genjutsu klanu Kurama',18,4,'anime',{requires:()=>hasClan('Kurama'),condition:'Klan Kurama.'}],
+        ['Transformacja mędrca · klan Jūgo',20,4,'naruto',{requires:()=>hasClan('Jūgo — nienazwany klan'),condition:'Klan Jūgo.'}],
+        ['Scalanie ciał · Sakon i Ukon',16,.5,'naruto',{}],
+        ['Kopiowanie chakry · Rinha',16,4,'anime',{requires:()=>hasClan('Rinha'),condition:'Klan Rinha.'}],
+        ['Reinkarnacja życia · Ryūzetsu',20,.2,'blood',{}]
+      ])stageById('kekkei').options.push(entry(name,p,w,src,extra));
+      const specialRows=[
+        ['Byakugō',20,2,'naruto',{requires:()=>['Tsunade','Sakura','Shizune'].includes(answers.mentor?.label),condition:'Trening medyczny: Tsunade, Sakura lub Shizune.'}],
+        ['Iryō Ninjutsu',12,10],['Sensoryka',10,10],['Kugutsu · marionetki',14,6],['Techniki papieru',14,2],
+        ['Jiongu',20,.4],['Rytuał Jashina',20,.2],['Edo Tensei',25,.2,'naruto',{requires:()=>['Orochimaru','Kabuto','Tobirama'].includes(answers.mentor?.label),condition:'Mentor znający Edo Tensei; technika wymaga ofiary i materiału genetycznego.'}],
+        ['Jinton · Pył (Kekkei Tōta)',25,.5,'naruto',{requires:()=>['Ōnoki','Mū'].includes(answers.mentor?.label)&&['Katon','Fūton','Doton'].every(n=>natureSet().has(n)),condition:'Mentor Ōnoki/Mū oraz Katon, Fūton i Doton.'}],
+        ['Juinjutsu · przeklęta pieczęć',18,2,'naruto',{requires:experimental,condition:'Eksperyment pod opieką Orochimaru, Kabuto lub Amado.'}],
+        ['Komórki Hashiramy',22,.4,'naruto',{requires:experimental,condition:'Udany eksperymentalny przeszczep.'}],
+        ['Kāma · Momoshiki',30,.12,'karma',{route:'Rzadkie przeżycie nałożenia Kāmy przez Momoshikiego; ryzyko przejęcia ciała.'}],
+        ['Kāma · Isshiki',32,.08,'karma',{route:'Rzadkie zgodne naczynie Isshikiego; ryzyko przejęcia ciała.'}],
+        ['Biała Kāma',22,.08,'karma',{route:'Wariant bez odtworzenia Ōtsutsuki; nie daje jego dōjutsu.'}],
+        ['Modyfikacje naukowe',18,2,'boruto',{requires:experimental,condition:'Mentor prowadzący modyfikacje ciała.'}],
+        ['Komórki Shibaia',28,.04,'prescience',{requires:()=>answers.mentor?.label==='Amado',condition:'Amado i udany przeszczep komórek Shibaia; nie gwarantuje wszystkich shinjutsu.'}],
+        ['Prescience',30,.025,'prescience',{requires:()=>answers.mentor?.label==='Amado',condition:'Amado; komórki Shibaia i przebudzenie w sytuacji granicznej.',route:'Przeszczep komórek Shibaia; model zdobycia wzorowany na Koji.'}],
+        ['Omnipotence',35,.01,'omni',{requires:()=>answers.mentor?.label==='Amado',condition:'Eksperyment Amado / komórki Shibaia.',route:'Nieświadoma manifestacja w stylu Eidy; nie dowolna kontrola rzeczywistości.'}],
+        ['Claw Marks',25,.06,'boruto',{requires:()=>answers.mentor?.label==='Amado',condition:'Modyfikacje Amado z komórkami Shibaia.'}],
+        ['Odbijanie ataków · Daemon',30,.025,'boruto',{requires:()=>answers.mentor?.label==='Amado',condition:'Eksperyment Amado; działanie zachowuje ograniczenia kontaktu.'}],
+        ['Rasengan Uzuhiko',25,.2,'tbv',{requires:()=>['Boruto','Kashin Koji'].includes(answers.mentor?.label),condition:'Trening Boruto lub Kashin Koji.'}]
+      ];
+      for(const [label,p,w,src='naruto',extra={}] of specialRows)stageById('special').options.push(entry(label,p,w,src,extra));
+      for(const o of stageById('special').options){
+        if(o.label==='Hiraishin'){o.requires=()=>['Minato','Tobirama','Boruto','Kashin Koji'].includes(answers.mentor?.label);o.condition='Mentor posiadający wiedzę o Hiraishin.';}
+        if(o.label==='Sage Mode'){o.requires=()=>['Jiraiya','Naruto','Kabuto','Fukasaku','Biały Wężowy Mędrzec','Kashin Koji','Hashirama'].includes(answers.mentor?.label);o.condition='Dostęp do treningu senjutsu przez mentora.';}
+      }
+      for(const o of stageById('eye').options){
+        if(o.label==='Tenseigan'){o.source='last';o.requires=()=>hasClan('Ōtsutsuki')&&hasClan('Hyūga');o.condition='Chakra Ōtsutsuki i Byakugan Hyūga; model wymaga obu linii.';o.route='Przebudzenie przez połączenie chakry Ōtsutsuki z Byakuganem Hyūga.';}
+        if(o.label==='Rinnegan'){o.baseWeight=.08;o.route='Wyjątkowy przeszczep lub moc Ōtsutsuki; zwykły trening Sharingana nie wystarcza.';}
+        if(['Byakugan','Sharingan','Mangekyō Sharingan'].includes(o.label))o.route='Dziedzictwo odpowiedniego klanu; poza nim wyłącznie bardzo rzadki przeszczep.';
+      }
+      stageById('eye').options.push(
+        entry('Eternal Mangekyō Sharingan',28,.15,'naruto',{requires:()=>hasClan('Uchiha'),condition:'Klan Uchiha; przeszczep oczu bliskiego krewnego z Mangekyō.',route:'Przeszczep od bliskiego krewnego.'}),
+        entry('Ketsuryūgan',16,.3,'novel',{route:'Dziedzictwo Chinoike lub wyjątkowy przeszczep.'}),
+        entry('Kokugan',32,.1,'boruto',{requires:()=>hasSpecial('Kāma · Isshiki'),condition:'Kāma Isshikiego; sama przynależność do Ōtsutsuki nie wystarcza.'}),
+        entry('Senrigan',25,.05,'boruto',{requires:()=>['Komórki Shibaia','Omnipotence','Prescience','Claw Marks','Odbijanie ataków · Daemon'].includes(answers.special?.label),condition:'Wcześniej zdobyte komórki Shibaia / ich manifestacja.'}),
+        entry('Jōgan',25,0,'banime',{requires:()=>false,condition:'Katalog: brak potwierdzonej ogólnej drogi zdobycia; RNG zablokowane zamiast wymyślonego dziedziczenia.'}),
+        entry('Rinne Sharingan',40,0,'naruto',{requires:()=>false,condition:'Katalog: wymaga szczególnej drogi związanej z Drzewem Boga; obecna kolejność kół nie potwierdza tych warunków.'}),
+        entry('Dōjutsu Ranmaru',14,.2,'anime',{route:'Wyjątkowe dziedzictwo w alternatywnej historii.'})
+      );
+      eyeAbilities['Eternal Mangekyō Sharingan']=eyeAbilities['Mangekyō Sharingan'].map(o=>({...o}));
+      for(const name of ['Mangekyō Sharingan','Eternal Mangekyō Sharingan']){
+        eyeAbilities[name].push(entry('Kagutsuchi',22,8),entry('Ōhirume',26,3,'tbv'),entry('Yachihoko',26,1,'game'));
+      }
+      eyeAbilities.Kokugan=[entry('Sukunahikona',26,50,'boruto'),entry('Daikokuten',26,50,'boruto')];
+      eyeAbilities.Ketsuryūgan=[entry('Genjutsu Ketsuryūgan',18,60,'novel'),entry('Manipulacja cieczami bogatymi w żelazo',18,40,'novel')];
+      eyeAbilities.Senrigan=[entry('Wgląd w teraźniejszość',18,50,'boruto'),entry('Wgląd w przeszłość od narodzin',18,50,'boruto')];
+      // One random specialization, not a claim that the other innate functions disappear.
+      stageById('bijuu').options.push(entry('Jūbi · Dziesięcioogoniasty',50,.015,'naruto',{requires:()=>hasClan('Ōtsutsuki')||['Rinnegan','Rinne Sharingan'].includes(answers.eye?.label),condition:'Moc Ōtsutsuki lub Rinnegan oraz wyjątkowe zapieczętowanie Jūbiego.'}));
+      weaponOptions=list(['Kunai','Shuriken','Katana','Kusarigama','Łuk','Wachlarz','Samehada','Kusanagi'],10);
+      weaponOptions.forEach((o,i)=>{o.baseWeight=baseWeights.weapon[i];o.source='naruto';});
+      for(const [label,w=2,src='naruto'] of [
+        ['Senbon',15],['Fūma Shuriken',10],['Tantō',12],['Nunchaku',8],['Bō · kij',8],['Ostrza chakry',8],
+        ['Marionetka bojowa',6],['Kubikiribōchō',1],['Hiramekarei',.8],['Kiba · bliźniacze miecze',.8],
+        ['Nuibari',.8],['Shibuki',.8],['Kabutowari',.8],['Gunbai',1],['Potrójna kosa',1],
+        ['Bashōsen',.2],['Benihisago',.2],['Kohaku no Jōhei',.2],['Kōkinjō',.2],['Shichiseiken',.2],
+        ['Kote · naukowe narzędzie ninja',3,'boruto'],['Chakra Blade · narzędzie naukowe',2,'boruto'],
+        ['Smocze ostrze',.3,'dragon']
+      ])weaponOptions.push(entry(label,10,w,src));
+      Object.assign(affinities,{
+        'Ōtsutsuki':{stats:['chakra','jutsu','strength']},'Hōzuki':{nature:'Suiton',stats:['combat']},
+        Yuki:{nature:'Suiton',stats:['jutsu']},Chinoike:{eye:{Ketsuryūgan:80},stats:['genjutsu']},
+        'Jūgo — nienazwany klan':{stats:['chakra','strength']},Kurama:{stats:['genjutsu']},
+        Iburi:{stats:['speed']},Kamizuru:{stats:['jutsu']},Izuno:{stats:['speed','combat']},
+        Funato:{nature:'Suiton'},Hoshigaki:{nature:'Suiton',stats:['chakra']},
+        'Kashin Koji':{special:{'Rasengan Uzuhiko':5,'Sage Mode':6},stats:['jutsu','iq']},
+        Boruto:{special:{'Rasengan Uzuhiko':8,Hiraishin:5},stats:['jutsu','speed']},
+        Naruto:{special:{'Sage Mode':8},stats:['chakra','jutsu']},Sasuke:{nature:'Raiton',stats:['eyeMastery','jutsu']},
+        Sakura:{special:{Byakugō:8},stats:['strength','jutsu']},Hanabi:{stats:['combat','eyeMastery']},
+        'Rock Lee':{special:{'Osiem Bram':10},stats:['combat','speed']},Shikamaru:{stats:['iq']},
+        Gaara:{nature:'Fūton'},Temari:{nature:'Fūton'},Darui:{nature:'Raiton'},Mei:{nature:'Suiton'},
+        Yamato:{nature:'Doton'},Tobirama:{nature:'Suiton',special:{Hiraishin:8}},Hashirama:{stats:['chakra','strength']},
+        Kabuto:{special:{'Sage Mode':5},stats:['jutsu']},Amado:{stats:['iq']}
+      });
+      renderCatalog();
+    }
+    function renderCatalog(){
+      const groups=[...baseStages.filter(s=>!stats.some(([id])=>id===s.id)),stage('weapons','Broń',weaponOptions),
+        ...Object.entries(traits).map(([name,opts])=>stage(name,'Special Trait · '+name,opts)),
+        ...Object.entries(eyeAbilities).map(([name,opts])=>stage(name,'Specjalizacja · '+name,opts))];
+      const host=document.querySelector('#catalogRows');host.replaceChildren();
+      let count=0;
+      for(const s of groups){
+        const detail=document.createElement('details'),heading=document.createElement('summary');
+        heading.textContent=t(s.label)+' · '+i18n[language].options+': '+s.options.length;detail.append(heading);
+        for(const o of s.options){
+          count++;const p=document.createElement('p'),a=document.createElement('a'),src=sources[o.source||'naruto'];
+          a.textContent=t(src.media)+' — '+src.title;a.href=src.url;a.target='_blank';a.rel='noopener noreferrer';
+          p.append(document.createTextNode(t(o.label)+' · '),a,document.createTextNode(o.condition?' · '+t(o.condition):''));detail.append(p);
+        }host.append(detail);
+      }
+      document.querySelector('#catalogCount').textContent=i18n[language].catalogCount+': '+count;
+    }
+    function weightedStage(s){
+      // Only earlier results can affect this wheel; frozen while spinning.
+      const path=sequence(),index=path.findIndex(x=>x.id===s.id);
+      const previous=path.slice(0,index).filter(x=>answers[x.id]).map(x=>[x.id,answers[x.id]]);
+      const notes=new Set();
+      const isLevel=stats.some(([id])=>id===s.id)||s.id.endsWith('Mastery');
+      let tilt=0;
+      const boost=(value,why)=>{tilt+=value;notes.add(why);};
+      if(isLevel)for(const [id,a] of previous){
+        if((affinities[a.label]?.stats||traitStats[a.label]||[]).includes(s.id))boost(.34,a.label+' → lepszy '+s.label);
+        if(id==='rank')boost(a.power/50,'Ranga → poziom wyszkolenia');
+        if(id==='natureCount'&&s.id==='jutsu')boost((a.count-1)*.08,'Więcej natur → wszechstronność jutsu');
+        if(/^nature\d$/.test(id)){
+          const targets={'Katon':['jutsu','strength'],'Fūton':['speed'],'Raiton':['speed','combat'],'Doton':['strength'],'Suiton':['jutsu','chakra']};
+          if(targets[a.label.split(' · ')[0]]?.includes(s.id))boost(.14,a.label+' → predyspozycja');
+        }
+        if(id==='kekkei'&&a.label!=='Brak'&&['jutsu','combat'].includes(s.id))boost(.25,'Kekkei Genkai → techniki');
+        if(id==='eye'&&a.label!=='Brak'&&['eyeMastery','combat','genjutsu'].includes(s.id))boost(.18,'Dōjutsu → percepcja i techniki');
+        if(id==='bijuu'&&a.power>0&&['chakra','strength'].includes(s.id))boost(s.id==='chakra'?.9:.25,'Bijū → zasoby chakry i wytrzymałość');
+        if(id==='weapon'&&['combat','strength'].includes(s.id))boost(.15,a.label+' → walka z bronią');
+        if(id==='weaponUse'&&a.label==='Nie'&&s.id==='combat')boost(.15,'Brak broni → trening bez broni');
+        if(id.endsWith('Mastery')&&['jutsu','combat','chakra','genjutsu'].includes(s.id))boost(a.power/75,'Mastery → wykorzystanie zdolności');
+        const links={jutsu:['combat','genjutsu'],combat:['speed','strength'],chakra:['strength','genjutsu'],iq:['speed','genjutsu'],speed:['strength'],strength:['genjutsu']};
+        if(links[id]?.includes(s.id))boost((a.power-30)/100,'Poziom '+path.find(x=>x.id===id).label+' → '+s.label);
+      }
+      const options=s.options.map((o,i)=>{
+        let weight=isLevel?[12,22,30,20,10,5,1][i]:(o.baseWeight??10);
+        if(s.id==='another'){
+          const familyTotal=s.options.filter(x=>x.label!=='Brak drugiego klanu').reduce((sum,x)=>sum+(x.baseWeight??10),0);
+          weight=o.label==='Brak drugiego klanu'?75:25*(o.baseWeight??10)/familyTotal;
+        }
+        const allowed=!o.requires||o.requires();
+        if(!allowed)weight=0;
+        if(s.id==='eye'&&o.label==='Byakugan'&&!hasClan('Hyūga')&&!hasClan('Ōtsutsuki'))weight*=experimental()?.15:.015;
+        if(s.id==='eye'&&['Sharingan','Mangekyō Sharingan'].includes(o.label)&&!hasClan('Uchiha'))weight*=experimental()?.15:.015;
+        if(s.id==='eye'&&o.label==='Ketsuryūgan'&&!hasClan('Chinoike'))weight*=experimental()?.15:.015;
+        const multiply=(factor,why)=>{weight*=factor;notes.add(why);};
+        for(const [id,a] of previous){
+          const profile=affinities[a.label];
+          if(profile?.[s.id]?.[o.label])multiply(profile[s.id][o.label],a.label+' → '+o.label);
+          if(/^nature\d$/.test(s.id)&&profile?.nature&&o.label.startsWith(profile.nature))multiply(3,a.label+' → '+profile.nature);
+          if(s.id==='bijuu'&&o.power>0&&profile?.bijuu)multiply(profile.bijuu,a.label+' → szansa na bijū');
+          if(s.id==='village'&&['clan','another'].includes(id)&&o.label==='Konohagakure'&&['Uchiha','Uzumaki','Hyūga','Senju','Nara','Aburame','Inuzuka','Akimichi','Yamanaka','Hatake','Sarutobi','Shimura'].includes(a.label))multiply(4,a.label+' → Konoha');
+          if(s.id==='mentor'&&id==='village'){
+            if((a.label==='Konohagakure'&&['Kakashi','Jiraiya','Tsunade','Might Guy','Asuma','Minato'].includes(o.label))||(a.label==='Kumogakure'&&o.label==='Killer B')||(a.label==='Otogakure'&&o.label==='Orochimaru'))multiply(3,a.label+' → miejscowy mentor');
+          }
+          if(s.id==='natureCount'&&id==='mentor'&&['Kakashi','Orochimaru','Jiraiya'].includes(a.label))multiply(1+(o.count-1)*.35,a.label+' → więcej natur');
+          if(s.id==='natureCount'&&id==='rank')multiply(1+(o.count-1)*a.power/40,'Ranga → więcej natur');
+          if(s.id==='special'&&id==='clanTrait'&&a.label==='Talent Katon'&&o.label==='Sage Mode')multiply(1.5,'Talent Katon → rozwój jutsu');
+          if(s.id==='weaponUse'&&o.label==='Tak'&&id==='mentor'&&['Killer B','Asuma','Orochimaru'].includes(a.label))multiply(3,a.label+' → walka bronią');
+        }
+        if(s.id==='kekkei'&&o.label!=='Brak'){
+          const combinations={'Hyōton · Lód':['Suiton','Fūton'],'Mokuton · Drewno':['Suiton','Doton'],'Yōton · Lawa':['Katon','Doton'],'Ranton · Burza':['Raiton','Suiton'],'Futton · Wrzenie':['Katon','Suiton'],'Jiton · Magnetyzm':['Fūton','Doton'],'Bakuton · Eksplozja':['Doton','Raiton'],'Shakuton · Żar':['Katon','Fūton']};
+          const natures=previous.filter(([id])=>/^nature\d$/.test(id)).map(([,a])=>a.label.split(' · ')[0]);
+          if(combinations[o.label]?.every(n=>natures.includes(n)))multiply(8,'Połączenie natur → '+o.label);
+        }
+        if(isLevel)weight*=Math.exp(Math.max(-.7,Math.min(1.5,tilt))*(i-2));
+        return {...o,weight,blocked:!allowed||weight===0};
+      });
+      const total=options.reduce((sum,o)=>sum+o.weight,0);let start=0;
+      for(const o of options){o.chance=o.weight/total;o.start=start;start+=o.chance*2*Math.PI;o.end=start;}
+      return {...s,options,notes:[...notes]};
+    }
+    function sampleIndex(options,rng=Math.random){
+      const r=rng();let cumulative=0;
+      for(let i=0;i<options.length;i++){cumulative+=options[i].chance;if(r<cumulative)return i;}
+      return options.length-1;
+    }
+    let wheelStage;
+    function active(){return sequence()[current];}
+    function renderResults(){
+      const rows=document.querySelector('#savedRows');rows.replaceChildren();
+      const nameRow=document.createElement('tr'),nameTh=document.createElement('th'),nameTd=document.createElement('td');
+      nameTh.scope='row';nameTh.textContent=i18n[language].name;nameTd.textContent=answers.name?answers.name.label:'—';
+      nameRow.append(nameTh,nameTd);rows.append(nameRow);
+      for(const s of sequence()){
+        const tr=document.createElement('tr'),th=document.createElement('th'),td=document.createElement('td');
+        th.scope='row';th.textContent=t(s.label);td.textContent=answers[s.id]?t(answers[s.id].label):'—';
+        if(answers[s.id])td.title=(sources[answers[s.id].source||'naruto']?.title||'')+' · '+(answers[s.id].route||answers[s.id].condition||'');
+        tr.append(th,td);rows.append(tr);
+      }
+      const copy=i18n[language];document.querySelector('#savedTitle').textContent=copy.saved+' · '+Object.keys(answers).length;
+    }
+    function leaderboard(){
+      return settingsStore.json('narutoRouletteLeaderboard',[]);
+    }
+    function saveLeaderboard(list){
+      settingsStore.setJson('narutoRouletteLeaderboard',list.slice(0,50));
+    }
+    function currentCharacterRows(){
+      return [{label:i18n.pl.name,value:answers.name?.label||''},...sequence().map(s=>({label:s.label,value:answers[s.id]?.label||''}))];
+    }
+    function addCurrentToLeaderboard(total,tier){
+      if(savedToLeaderboard)return;
+      const clan=answers.clan?.label||'Brak klanu';
+      const record={id:String(Date.now())+'-'+Math.random().toString(16).slice(2),name:answers.name?.label||'Shinobi',clan,power:total,tier,rows:currentCharacterRows()};
+      const list=[record,...leaderboard()].sort((a,b)=>b.power-a.power);
+      saveLeaderboard(list);savedToLeaderboard=true;renderLeaderboard();
+    }
+    function renderLeaderboard(){
+      if(!leaderboardList)return;
+      const copy=i18n[language],list=leaderboard().sort((a,b)=>b.power-a.power);
+      leaderboardList.replaceChildren();
+      if(!list.length){
+        const empty=document.createElement('p');empty.className='leader-empty';empty.textContent=copy.leaderEmpty;leaderboardList.append(empty);
+        return;
+      }
+      const ul=document.createElement('ul');ul.className='leader-list';
+      for(const item of list){
+        const li=document.createElement('li'),button=document.createElement('button');
+        button.type='button';button.className='leader-item';button.addEventListener('click',()=>openLeaderboardModal(item));
+        const name=document.createElement('span'),clan=document.createElement('span'),power=document.createElement('span');
+        name.className='leader-name';name.textContent=item.name+' '+item.clan;
+        clan.className='leader-clan';clan.textContent=copy.clanSurname+': '+t(item.clan);
+        power.className='leader-power';power.textContent=item.power+' '+copy.points;
+        button.append(name,power,clan);li.append(button);ul.append(li);
+      }
+      leaderboardList.append(ul);
+    }
+    function openLeaderboardModal(item){
+      const copy=i18n[language];selectedLeaderId=item.id;leaderboardModal.hidden=false;leaderModalBody.replaceChildren();
+      leaderModalTitle.textContent=item.name+' '+item.clan;
+      leaderModalSub.textContent=copy.powerShort+': '+item.power+' '+copy.points+' · '+copy.class+': '+t(item.tier||'');
+      const table=document.createElement('table'),tbody=document.createElement('tbody');
+      for(const row of item.rows||[]){
+        const tr=document.createElement('tr'),th=document.createElement('th'),td=document.createElement('td');
+        th.scope='row';th.textContent=t(row.label);td.textContent=(row.label===i18n.pl.name?row.value:t(row.value))||'—';tr.append(th,td);tbody.append(tr);
+      }
+      table.append(tbody);leaderModalBody.append(table);
+    }
+    function closeLeaderboardModal(){
+      leaderboardModal.hidden=true;leaderModalBody.replaceChildren();
+    }
+    function showNameSetup(){
+      settled=false;busy=false;angle=0;wheelStage=weightedStage(active());
+      document.querySelector('#stageLabel').textContent=i18n[language].nameStage;
+      result.textContent=i18n[language].name;
+      sub.textContent=i18n[language].namePrompt;
+      nameControls.hidden=false;spin.hidden=true;next.hidden=true;
+      chips.replaceChildren();document.querySelector('#hint').textContent=i18n[language].namePrompt;
+      renderResults();draw();
+    }
+    function setCharacterName(value){
+      const clean=String(value||'').trim().replace(/\s+/g,' ').slice(0,28);
+      if(!clean){characterName.focus();return;}
+      answers.name=option(clean,0);characterName.value=clean;nameControls.hidden=true;showStage();
+    }
+    function rollCharacterName(){
+      const picked=randomNames[Math.floor(Math.random()*randomNames.length)];
+      setCharacterName(picked);
+    }
+    function draw(){
+      ctx.clearRect(0,0,700,700);
+      const options=wheelStage.options;
+      ctx.save();ctx.translate(350,350);ctx.rotate(angle);
+      options.forEach((o,i)=>{
+        if(o.chance===0)return;
+        ctx.beginPath();ctx.moveTo(0,0);ctx.arc(0,0,326,o.start,o.end);ctx.closePath();
+        ctx.fillStyle=colorFor(o.label);ctx.fill();ctx.strokeStyle='#ffffff65';ctx.lineWidth=2;ctx.stroke();
+        ctx.save();ctx.rotate((o.start+o.end)/2);ctx.fillStyle='#fff';ctx.textAlign='right';
+        const maxSize=options.length>30?10:options.length>16?13:18;
+        const label=t(o.label);
+        ctx.font='700 '+Math.max(9,Math.min(maxSize,Math.floor(340/Math.max(label.length,10))))+'px system-ui';
+        ctx.fillText(label,306,4);ctx.restore();
+      });
+      ctx.restore();ctx.beginPath();ctx.arc(350,350,48,0,2*Math.PI);ctx.fillStyle='#171322';ctx.fill();
+      ctx.strokeStyle='#fff';ctx.lineWidth=4;ctx.stroke();ctx.fillStyle='#fff';ctx.textAlign='center';ctx.font='bold 18px system-ui';ctx.fillText(i18n[language].spin.toUpperCase(),350,356);
+    }
+    function showStage(refreshOnly=false){
+      if(!answers.name){showNameSetup();return;}
+      if(!refreshOnly){settled=false;angle=0;wheelStage=weightedStage(active());}
+      const s=wheelStage;
+      document.querySelector('#stageLabel').textContent=i18n[language].roll+' '+(current+1)+' · '+t(s.label);
+      result.textContent=t(s.label);sub.textContent=i18n[language].spinHint;
+      spin.hidden=false;spin.disabled=false;spin.textContent=i18n[language].spin+': '+t(s.label);
+      next.hidden=true;next.textContent=t('Przejdź dalej');
+      chips.replaceChildren();s.options.forEach(o=>{const el=document.createElement('span');el.className='chip'+(o.blocked?' blocked':'');const percentage=o.chance>0&&o.chance<.0001?'<0.01':(o.chance*100).toFixed(2);el.textContent=t(o.label)+' · '+percentage+'%'+(o.blocked?' · '+t(o.condition||i18n[language].unavailable): '');el.title=t(o.condition||o.route||'');chips.append(el);});
+      document.querySelector('#hint').textContent=i18n[language].rng+' '+(s.notes.length?s.notes.map(t).join(' • '):i18n[language].baseOdds);
+      renderResults();draw();
+      if(refreshOnly){
+        spin.disabled=busy;spin.hidden=settled||finished;
+        if(busy)result.textContent=i18n[language].roll+'…';
+        if(settled&&answers[s.id]){
+          const winner=answers[s.id];result.textContent=t(winner.label);
+          sub.textContent=i18n[language].savedLine+' '+t(winner.route||winner.condition||'')+' '+(sources[winner.source||'naruto']?.title||'');
+        }
+        if(finished)summary();
+      }
+    }
+    function go(){
+      if(!answers.name){showNameSetup();return;}
+      if(busy||settled||finished)return;
+      busy=true;spin.disabled=true;result.textContent=i18n[language].roll+'…';
+      const s=wheelStage,selected=sampleIndex(s.options);
+      const center=(s.options[selected].start+s.options[selected].end)/2;
+      const desired=((1.5*Math.PI-center)%(2*Math.PI)+2*Math.PI)%(2*Math.PI);
+      const from=angle,target=desired+8*Math.PI*2,start=performance.now();
+      function frame(now){
+        const p=Math.min(1,(now-start)/3200);angle=from+(target-from)*(1-Math.pow(1-p,4));draw();
+        if(p<1){animationId=requestAnimationFrame(frame);return;}
+        answers[s.id]=s.options[selected];busy=false;settled=true;result.textContent=t(answers[s.id].label);
+        sub.textContent=i18n[language].savedLine+' '+t(s.options[selected].route||s.options[selected].condition||'')+' '+(sources[s.options[selected].source||'naruto']?.title||'');spin.hidden=true;next.hidden=true;renderResults();
+        const stageAfterResult=sequence().length;
+        setTimeout(()=>{
+          if(finished)return;
+          if(current<stageAfterResult-1){current++;showStage();}
+          else summary();
+        },1100);
+      }
+      animationId=requestAnimationFrame(frame);
+    }
+    function summary(){
+      finished=true;next.hidden=true;spin.hidden=true;
+      const total=Object.values(answers).reduce((sum,o)=>sum+o.power,0);
+      const statTotal=stats.reduce((sum,[id])=>sum+answers[id].power,0);
+      const tier=total>=550?'Legendarny shinobi':total>=430?'Klasa Kage':total>=320?'Elitarny Jōnin':total>=230?'Jōnin':total>=140?'Chūnin':'Genin';
+      result.textContent=t(tier);sub.textContent=i18n[language].complete;
+      document.querySelector('#stageLabel').textContent=i18n[language].summary;
+      const box=document.querySelector('#powerSummary');box.hidden=false;
+      document.querySelector('#powerTitle').textContent=i18n[language].power;
+      document.querySelector('#powerScore').textContent=total+' '+i18n[language].points;
+      document.querySelector('#powerDetail').textContent=i18n[language].stats+': '+statTotal+' '+i18n[language].points+' + '+i18n[language].bonus+': '+(total-statTotal)+' '+i18n[language].points+'. '+i18n[language].class+': '+t(tier)+'.';
+      addCurrentToLeaderboard(total,tier);
+    }
+    function restart(){
+      cancelAnimationFrame(animationId);answers={};current=0;busy=false;settled=false;finished=false;savedToLeaderboard=false;
+      document.querySelector('#powerSummary').hidden=true;document.querySelector('#powerScore').textContent='';
+      document.querySelector('#powerDetail').textContent='';characterName.value='';showNameSetup();
+    }
+    next.addEventListener('click',()=>{if(!settled||busy||finished)return;if(current===sequence().length-1)summary();else{current++;showStage();}});
+    reset.addEventListener('click',restart);spin.addEventListener('click',go);canvas.addEventListener('click',go);
+    saveName.addEventListener('click',()=>setCharacterName(characterName.value));
+    randomName.addEventListener('click',rollCharacterName);
+    characterName.addEventListener('keydown',event=>{if(event.key==='Enter')setCharacterName(characterName.value);});
+    leaderModalClose.addEventListener('click',closeLeaderboardModal);
+    leaderboardModal.addEventListener('click',event=>{if(event.target===leaderboardModal)closeLeaderboardModal();});
+    if(document.addEventListener)document.addEventListener('keydown',event=>{if(event.key==='Escape'&&!leaderboardModal.hidden)closeLeaderboardModal();});
+    const settingsButton=document.querySelector('#settingsButton'),settingsPanel=document.querySelector('#settingsPanel');
+    settingsButton.addEventListener('click',()=>{settingsPanel.hidden=!settingsPanel.hidden;settingsButton.setAttribute('aria-expanded',String(!settingsPanel.hidden));});
+    document.querySelector('#languageSelect').addEventListener('change',event=>{language=event.target.value;settingsStore.set('narutoRouletteLanguage',language);applyLanguage();showStage(true);});
+    document.querySelector('#themeSelect').addEventListener('change',event=>{settingsStore.set('narutoRouletteTheme',event.target.value);applyTheme(event.target.value);});
+    document.querySelector('#themeSecret').addEventListener('click',startSecretRain);
+    expandCatalog();
+    applyTheme(settingsStore.get('narutoRouletteTheme','naruto'));
+    applyLanguage();
+    showStage();
+  </script>
+</body>
+</html>
