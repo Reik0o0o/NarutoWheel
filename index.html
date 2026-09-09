@@ -300,6 +300,50 @@
     i18n.pl.leaderboard='Ranking postaci';i18n.pl.leaderEmpty='Ukończ postać, aby zapisać ją w rankingu.';
     const themeSecrets={naruto:{icon:'🍥',labels:{pl:'Deszcz narutomaki',en:'Narutomaki rain',ja:'なると巻きの雨'}},sasuke:{icon:'⚡',labels:{pl:'Deszcz piorunów',en:'Lightning rain',ja:'雷の雨'}},sakura:{icon:'✿',labels:{pl:'Deszcz kwiatów sakury',en:'Cherry blossom rain',ja:'桜の花の雨'}},smooth:{icon:'✦',labels:{pl:'Deszcz gwiazd',en:'Star rain',ja:'星の雨'}}};
     let secretTheme='naruto',secretTimer=null;
+    let audioContext=null,masterGain=null,compressor=null,spinTicker=null,wheelClickAsset=null,activeWheelAudio=null;
+    if(typeof Audio==='function'){wheelClickAsset=new Audio('assets/wheel-fortune.wav');wheelClickAsset.preload='auto';wheelClickAsset.volume=.34;}
+    function audio(){
+      if(!audioContext){audioContext=new (window.AudioContext||window.webkitAudioContext)();compressor=audioContext.createDynamicsCompressor();compressor.threshold.value=-22;compressor.knee.value=18;compressor.ratio.value=5;compressor.attack.value=.003;compressor.release.value=.18;masterGain=audioContext.createGain();masterGain.gain.value=.72;masterGain.connect(compressor).connect(audioContext.destination);}
+      if(audioContext.state==='suspended')audioContext.resume();
+      return audioContext;
+    }
+    function tone(frequency,duration,type='sine',volume=.045,delay=0,slide=0){
+      try{const ctx=audio(),osc=ctx.createOscillator(),gain=ctx.createGain(),at=ctx.currentTime+delay;
+        osc.type=type;osc.frequency.setValueAtTime(frequency,at);if(slide)osc.frequency.exponentialRampToValueAtTime(Math.max(20,frequency+slide),at+duration);gain.gain.setValueAtTime(.0001,at);gain.gain.exponentialRampToValueAtTime(volume,at+.012);gain.gain.exponentialRampToValueAtTime(.0001,at+duration);osc.connect(gain).connect(masterGain);osc.start(at);osc.stop(at+duration+.03);
+      }catch{}
+    }
+    function noise(duration=.12,volume=.025,delay=0){try{const ctx=audio(),buffer=ctx.createBuffer(1,ctx.sampleRate*duration,ctx.sampleRate),data=buffer.getChannelData(0);for(let i=0;i<data.length;i++)data[i]=(Math.random()*2-1)*(1-i/data.length);const src=ctx.createBufferSource(),filter=ctx.createBiquadFilter(),gain=ctx.createGain(),at=ctx.currentTime+delay;filter.type='bandpass';filter.frequency.value=1800;filter.Q.value=.7;gain.gain.setValueAtTime(volume,at);gain.gain.exponentialRampToValueAtTime(.0001,at+duration);src.buffer=buffer;src.connect(filter).connect(gain).connect(masterGain);src.start(at);src.stop(at+duration);}catch{}}
+    function soundClick(){tone(460,.055,'triangle',.035,0,180);tone(920,.08,'sine',.016,.025,-160);noise(.035,.012);}
+    function soundSpin(){tone(78,.16,'triangle',.018,0,100);tone(156,.22,'sine',.012,.04,170);noise(.16,.009,.06);}
+    function soundWheelTick(speed=1){
+      const clack=115+Math.min(150,speed*38);
+      tone(clack,.018,'triangle',.008,0,55);
+    }
+    function soundWheelAssetStart(){
+      try{if(activeWheelAudio){activeWheelAudio.pause();activeWheelAudio.currentTime=0;}activeWheelAudio=document.createElement('audio');activeWheelAudio.src='assets/wheel-fortune.wav';activeWheelAudio.volume=.65;activeWheelAudio.preload='auto';activeWheelAudio.load();const promise=activeWheelAudio.play();if(promise?.catch)promise.catch(()=>soundSpin());}catch{soundSpin();}
+    }
+    function soundWheelAssetStop(){if(activeWheelAudio){try{activeWheelAudio.pause();activeWheelAudio.currentTime=0;}catch{}}}
+    function soundWheelFriction(speed){
+      if(speed<.22){tone(180,.08,'triangle',.008,0,35);noise(.08,.004);}
+    }
+    function soundResult(){noise(.2,.03);tone(98,.22,'triangle',.035,0,120);tone(196,.2,'sine',.035,.08,160);tone(392,.18,'sine',.042,.18,210);tone(659,.3,'sine',.05,.28,260);}
+    function soundSuccess(){noise(.2,.018);[523,659,784,1047,1318].forEach((f,i)=>tone(f,.16,'triangle',.035,i*.075));tone(1047,.5,'sine',.025,.38,260);}
+    function soundOpen(){tone(220,.12,'triangle',.025,0,120);tone(440,.16,'sine',.025,.08,180);}
+    function soundClose(){tone(440,.1,'sine',.018,0,-130);tone(220,.15,'triangle',.016,.07,-100);}
+    function soundRasengan(){
+      noise(.7,.028);tone(74,.72,'sawtooth',.025,0,520);tone(148,.62,'triangle',.022,.08,760);tone(296,.48,'sine',.02,.18,900);
+    }
+    function soundChidori(){
+      noise(.8,.045);tone(1180,.12,'sawtooth',.025);tone(1680,.14,'square',.02,.08,-240);tone(2140,.18,'triangle',.022,.18,-380);tone(760,.34,'sine',.025,.3,460);
+    }
+    function soundShannaro(){
+      noise(.18,.055);tone(92,.22,'square',.055,0,28);tone(184,.18,'triangle',.045,.05,70);tone(368,.3,'sine',.035,.12,120);
+    }
+    function soundSecret(){
+      if(secretTheme==='naruto')soundRasengan();
+      else if(secretTheme==='sasuke')soundChidori();
+      else if(secretTheme==='sakura')soundShannaro();
+    }
     function refreshThemeSecret(){
       const secret=themeSecrets[secretTheme],button=document.querySelector('#themeSecret');
       button.hidden=secretTheme==='smooth';
@@ -312,6 +356,7 @@
     function startSecretRain(){
       clearSecretRain();
       if(secretTheme==='smooth')return;
+      soundSecret();
       const layer=document.querySelector('#secretRain'),secret=themeSecrets[secretTheme];
       const reduced=typeof matchMedia==='function'&&matchMedia('(prefers-reduced-motion: reduce)').matches;
       for(let i=0;i<(reduced?10:40);i++){
@@ -870,15 +915,19 @@ const sources={
     function go(){
       if(!answers.name){showNameSetup();return;}
       if(busy||settled||finished)return;
+      soundWheelAssetStart();
+      if(typeof clearInterval==='function')clearInterval(spinTicker);spinTicker=null;
       busy=true;spin.disabled=true;result.textContent=i18n[language].roll+'…';
       const s=wheelStage,selected=sampleIndex(s.options);
       const center=(s.options[selected].start+s.options[selected].end)/2;
       const desired=((1.5*Math.PI-center)%(2*Math.PI)+2*Math.PI)%(2*Math.PI);
-      const from=angle,target=desired+8*Math.PI*2,start=performance.now();
+      const from=angle,target=desired+8*Math.PI*2,start=performance.now();let lastTickAngle=from;
       function frame(now){
         const p=Math.min(1,(now-start)/3200);angle=from+(target-from)*(1-Math.pow(1-p,4));draw();
         if(p<1){animationId=requestAnimationFrame(frame);return;}
+      if(typeof clearInterval==='function')clearInterval(spinTicker);spinTicker=null;soundWheelAssetStop();
         answers[s.id]=s.options[selected];busy=false;settled=true;result.textContent=t(answers[s.id].label);
+        soundResult();
         sub.textContent=i18n[language].savedLine+' '+t(s.options[selected].route||s.options[selected].condition||'')+' '+(sources[s.options[selected].source||'naruto']?.title||'');spin.hidden=true;next.hidden=true;renderResults();
         const stageAfterResult=sequence().length;
         setTimeout(()=>{
@@ -900,25 +949,25 @@ const sources={
       document.querySelector('#powerTitle').textContent=i18n[language].power;
       document.querySelector('#powerScore').textContent=total+' '+i18n[language].points;
       document.querySelector('#powerDetail').textContent=i18n[language].stats+': '+statTotal+' '+i18n[language].points+' + '+i18n[language].bonus+': '+(total-statTotal)+' '+i18n[language].points+'. '+i18n[language].class+': '+t(tier)+'.';
-      addCurrentToLeaderboard(total,tier);
+      soundSuccess();addCurrentToLeaderboard(total,tier);
     }
     function restart(){
-      cancelAnimationFrame(animationId);answers={};current=0;busy=false;settled=false;finished=false;savedToLeaderboard=false;
+      cancelAnimationFrame(animationId);if(typeof clearInterval==='function')clearInterval(spinTicker);spinTicker=null;soundWheelAssetStop();answers={};current=0;busy=false;settled=false;finished=false;savedToLeaderboard=false;
       document.querySelector('#powerSummary').hidden=true;document.querySelector('#powerScore').textContent='';
       document.querySelector('#powerDetail').textContent='';characterName.value='';showNameSetup();
     }
     next.addEventListener('click',()=>{if(!settled||busy||finished)return;if(current===sequence().length-1)summary();else{current++;showStage();}});
-    reset.addEventListener('click',restart);spin.addEventListener('click',go);canvas.addEventListener('click',go);
-    saveName.addEventListener('click',()=>setCharacterName(characterName.value));
-    randomName.addEventListener('click',rollCharacterName);
+    reset.addEventListener('click',()=>{soundClick();restart();});spin.addEventListener('click',go);canvas.addEventListener('click',go);
+    saveName.addEventListener('click',()=>{soundClick();setCharacterName(characterName.value);});
+    randomName.addEventListener('click',()=>{soundClick();rollCharacterName();});
     characterName.addEventListener('keydown',event=>{if(event.key==='Enter')setCharacterName(characterName.value);});
-    leaderModalClose.addEventListener('click',closeLeaderboardModal);
-    leaderboardModal.addEventListener('click',event=>{if(event.target===leaderboardModal)closeLeaderboardModal();});
-    if(document.addEventListener)document.addEventListener('keydown',event=>{if(event.key==='Escape'&&!leaderboardModal.hidden)closeLeaderboardModal();});
+    leaderModalClose.addEventListener('click',()=>{soundClose();closeLeaderboardModal();});
+    leaderboardModal.addEventListener('click',event=>{if(event.target===leaderboardModal){soundClose();closeLeaderboardModal();}});
+    if(document.addEventListener)document.addEventListener('keydown',event=>{if(event.key==='Escape'&&!leaderboardModal.hidden){soundClose();closeLeaderboardModal();}});
     const settingsButton=document.querySelector('#settingsButton'),settingsPanel=document.querySelector('#settingsPanel');
-    settingsButton.addEventListener('click',()=>{settingsPanel.hidden=!settingsPanel.hidden;settingsButton.setAttribute('aria-expanded',String(!settingsPanel.hidden));});
-    document.querySelector('#languageSelect').addEventListener('change',event=>{language=event.target.value;settingsStore.set('narutoRouletteLanguage',language);applyLanguage();showStage(true);});
-    document.querySelector('#themeSelect').addEventListener('change',event=>{settingsStore.set('narutoRouletteTheme',event.target.value);applyTheme(event.target.value);});
+    settingsButton.addEventListener('click',()=>{soundClick();settingsPanel.hidden=!settingsPanel.hidden;settingsButton.setAttribute('aria-expanded',String(!settingsPanel.hidden));});
+    document.querySelector('#languageSelect').addEventListener('change',event=>{soundClick();language=event.target.value;settingsStore.set('narutoRouletteLanguage',language);applyLanguage();showStage(true);});
+    document.querySelector('#themeSelect').addEventListener('change',event=>{soundClick();settingsStore.set('narutoRouletteTheme',event.target.value);applyTheme(event.target.value);});
     document.querySelector('#themeSecret').addEventListener('click',startSecretRain);
     expandCatalog();
     applyTheme(settingsStore.get('narutoRouletteTheme','naruto'));
